@@ -13,7 +13,7 @@ export const INITIAL_PRODUCTS = [
     icon: "🍺",
     color: "#f59e0b",
     stock: 33,
-    costPrice: 0.75,
+    costPrice: 0.71,
     minStockAlert: 10,
     presentations: [
       { id: "unidad", name: "Unidad", units: 1, price: 1.00, icon: "🍺", badge: "1 un" },
@@ -30,7 +30,7 @@ export const INITIAL_PRODUCTS = [
     icon: "🍻",
     color: "#ef4444",
     stock: 13,
-    costPrice: 0.90,
+    costPrice: 0.92,
     minStockAlert: 6,
     presentations: [
       { id: "unidad", name: "Unidad", units: 1, price: 1.25, icon: "🍺", badge: "1 un" }
@@ -45,7 +45,7 @@ export const INITIAL_PRODUCTS = [
     icon: "🍾",
     color: "#10b981",
     stock: 72,
-    costPrice: 0.90,
+    costPrice: 1.05,
     minStockAlert: 12,
     presentations: [
       { id: "unidad", name: "Unidad", units: 1, price: 1.25, icon: "🍺", badge: "1 un" },
@@ -62,7 +62,7 @@ export const INITIAL_PRODUCTS = [
     icon: "👑",
     color: "#facc15",
     stock: 21,
-    costPrice: 1.10,
+    costPrice: 1.21,
     minStockAlert: 6,
     presentations: [
       { id: "unidad", name: "Unidad", units: 1, price: 1.50, icon: "🍺", badge: "1 un" },
@@ -79,7 +79,7 @@ export const INITIAL_PRODUCTS = [
     icon: "⭐",
     color: "#059669",
     stock: 14,
-    costPrice: 0.75,
+    costPrice: 0.80,
     minStockAlert: 6,
     presentations: [
       { id: "unidad", name: "Unidad", units: 1, price: 1.00, icon: "🍺", badge: "1 un" }
@@ -94,7 +94,7 @@ export const INITIAL_PRODUCTS = [
     icon: "🍺",
     color: "#047857",
     stock: 27,
-    costPrice: 1.50,
+    costPrice: 1.67,
     minStockAlert: 12,
     presentations: [
       { id: "unidad", name: "Unidad (Líquido)", units: 1, price: 2.00, icon: "🍺", badge: "1 un" },

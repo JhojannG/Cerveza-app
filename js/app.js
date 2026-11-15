@@ -282,21 +282,27 @@ class AppController {
 
                   <!-- Large Product Image Container -->
                   <div class="relative w-full h-36 bg-slate-950/80 rounded-2xl overflow-hidden flex items-center justify-center p-2 border border-slate-800/90 shadow-inner mb-3">
-                    <span class="absolute top-2 right-2 text-xs font-black text-slate-200 bg-slate-900/90 px-2 py-0.5 rounded-lg border border-slate-700/80">
-                      ${prod.volume}
-                    </span>
                     ${prod.image ? `
                       <img src="${prod.image}" alt="${prod.name}" class="w-full h-full object-contain filter drop-shadow-md" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
                       <span class="text-5xl hidden">${prod.icon || '🍺'}</span>
                     ` : `
                       <span class="text-5xl">${prod.icon || '🍺'}</span>
                     `}
+                    <!-- Volume Pill (Always on top with z-20) -->
+                    <span class="absolute top-2 right-2 z-20 text-[11px] font-black text-amber-300 bg-slate-950/95 px-2.5 py-1 rounded-xl border border-slate-700/80 shadow-xl backdrop-blur-md pointer-events-none">
+                      ${prod.volume}
+                    </span>
                   </div>
 
                   <!-- Product Name & Price (LARGER) -->
                   <div class="space-y-1">
-                    <div class="font-black text-white text-base sm:text-lg leading-snug line-clamp-2">
-                      ${prod.name}
+                    <div class="flex items-center justify-between gap-1.5">
+                      <div class="font-black text-white text-base sm:text-lg leading-snug line-clamp-1">
+                        ${prod.name}
+                      </div>
+                      <span class="text-[11px] font-extrabold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-lg border border-slate-700/60 shrink-0">
+                        ${prod.volume}
+                      </span>
                     </div>
                     <div class="text-base sm:text-lg font-black text-amber-400">
                       ${priceText}

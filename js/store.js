@@ -45,11 +45,23 @@ class Store {
       soundEnabled: localStorage.getItem('cb_sound') !== 'false'
     };
 
-    // Ensure state.products only has the 6 official products
+    // Ensure state.products has official updated cost prices and presentations
+    if (this.state.products && Array.isArray(this.state.products)) {
+      INITIAL_PRODUCTS.forEach(initP => {
+        const existing = this.state.products.find(p => p.id === initP.id);
+        if (existing) {
+          existing.costPrice = initP.costPrice;
+          existing.volume = initP.volume;
+          existing.image = initP.image;
+          existing.presentations = initP.presentations;
+        }
+      });
+    }
+
     if (!this.state.products || this.state.products.length !== INITIAL_PRODUCTS.length || !this.state.products[0].presentations) {
       this.state.products = JSON.parse(JSON.stringify(INITIAL_PRODUCTS));
-      this.saveToStorage();
     }
+    this.saveToStorage();
 
     this.audioCtx = null;
 
@@ -688,6 +700,15 @@ class Store {
           // Sort strictly in catalog order
           const idOrder = INITIAL_PRODUCTS.map(p => p.id);
           cloudProducts.sort((a, b) => idOrder.indexOf(a.id) - idOrder.indexOf(b.id));
+
+          // Ensure costPrices reflect official rates
+          cloudProducts.forEach(cp => {
+            const initP = INITIAL_PRODUCTS.find(p => p.id === cp.id);
+            if (initP && (!cp.costPrice || cp.costPrice !== initP.costPrice)) {
+              cp.costPrice = initP.costPrice;
+            }
+          });
+
           this.state.products = cloudProducts;
           this.syncStatus = 'online';
           this.syncError = '';
