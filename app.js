@@ -2000,7 +2000,15 @@ ${summaryText}
   }
 }
 
-// Start application on DOM Ready
-document.addEventListener('DOMContentLoaded', () => {
-  window.app = new AppController();
-});
+// Start application immediately or on DOM Ready
+function startApp() {
+  if (!window.app) {
+    window.app = new AppController();
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startApp);
+} else {
+  startApp();
+}

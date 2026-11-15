@@ -16,9 +16,9 @@
   
   <!-- Icons & Manifest -->
   <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" onerror="this.onerror=null;this.href='./apple-touch-icon.png';">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" onerror="this.onerror=null;this.href='./icon-192.png';">
-  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg" onerror="this.onerror=null;this.href='./icon.svg';">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -41,8 +41,9 @@
     }
   </script>
 
-  <!-- Custom iOS Stylesheet with Fallback -->
-  <link rel="stylesheet" href="./css/app.css" onerror="this.onerror=null;this.href='./app.css';">
+  <!-- Custom iOS Stylesheet with Dual Path Resolution -->
+  <link rel="stylesheet" href="./app.css">
+  <link rel="stylesheet" href="./css/app.css">
 </head>
 <body class="bg-[#090d16] text-slate-100 min-h-screen flex flex-col font-sans select-none antialiased">
 
@@ -92,7 +93,15 @@
 
   <!-- Application Entry Point with Dual Path Resolution -->
   <script type="module">
-    import('./js/app.js').catch(() => import('./app.js'));
+    try {
+      await import('./app.js');
+    } catch (e1) {
+      try {
+        await import('./js/app.js');
+      } catch (e2) {
+        console.error('Error loading app:', e1, e2);
+      }
+    }
   </script>
 </body>
 </html>
