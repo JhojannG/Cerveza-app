@@ -262,6 +262,19 @@ class Store {
     this.notify();
   }
 
+  setCartQuantity(cartKey, qty) {
+    const index = this.state.cart.findIndex(item => item.cartKey === cartKey || item.productId === cartKey);
+    if (index === -1) return;
+    const val = parseInt(qty, 10);
+    if (isNaN(val) || val <= 0) {
+      this.state.cart.splice(index, 1);
+    } else {
+      this.state.cart[index].quantity = val;
+    }
+    this.playTapSound();
+    this.notify();
+  }
+
   clearCart() {
     this.state.cart = [];
     this.notify();

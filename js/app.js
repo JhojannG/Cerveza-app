@@ -197,51 +197,51 @@ class AppController {
 
     return `
       <div class="space-y-4">
-        <!-- Vendedor Selector Bar (Always Visible at Top) -->
-        <div class="ios-card-glass p-2.5 rounded-2xl shadow-lg border border-slate-800">
-          <div class="flex items-center justify-between mb-2 px-1">
-            <span class="text-xs uppercase font-extrabold tracking-wider text-amber-400/90 flex items-center gap-1.5">
+        <!-- Vendedor Selector Bar (Always Visible at Top - BIGGER FONTS) -->
+        <div class="ios-card-glass p-3 rounded-2xl shadow-lg border border-slate-800">
+          <div class="flex items-center justify-between mb-2.5 px-1">
+            <span class="text-sm uppercase font-black tracking-wider text-amber-400 flex items-center gap-1.5">
               <span>👤</span> ¿QUIÉN ESTÁ ATENDIENDO?
             </span>
-            <span class="text-[11px] text-slate-400 font-medium">Toque para cambiar</span>
+            <span class="text-xs text-slate-400 font-semibold">Toca para cambiar</span>
           </div>
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-2 gap-2.5">
             ${SELLERS.map(s => {
               const isSelected = s.id === currentSellerId;
               return `
                 <button 
                   data-seller-id="${s.id}"
-                  class="seller-btn py-2.5 px-3 rounded-xl flex items-center justify-between border touch-press transition-all ${
+                  class="seller-btn py-3 px-3.5 rounded-2xl flex items-center justify-between border-2 touch-press transition-all ${
                     isSelected 
                       ? 'bg-amber-500 text-slate-950 font-black border-amber-300 shadow-md glow-gold scale-[1.02]' 
-                      : 'bg-slate-900/80 text-slate-200 font-semibold border-slate-800 hover:bg-slate-800'
+                      : 'bg-slate-900/90 text-slate-200 font-bold border-slate-800 hover:bg-slate-800'
                   }"
                 >
-                  <div class="flex items-center gap-2 overflow-hidden">
-                    <span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${
+                  <div class="flex items-center gap-2.5 overflow-hidden">
+                    <span class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
                       isSelected ? 'bg-slate-950 text-amber-400' : 'bg-slate-800 text-slate-300'
                     }">
                       ${s.badge}
                     </span>
-                    <span class="truncate text-xs">${s.name}</span>
+                    <span class="truncate text-sm sm:text-base font-black">${s.name}</span>
                   </div>
-                  ${isSelected ? '<span class="text-sm">✓</span>' : ''}
+                  ${isSelected ? '<span class="text-base font-black">✓</span>' : ''}
                 </button>
               `;
             }).join('')}
           </div>
         </div>
 
-        <!-- Cervezas Grid (Initial Product View Only) -->
+        <!-- Cervezas Grid (BIGGER IMAGES & BIGGER FONTS) -->
         <div>
-          <div class="flex items-center justify-between px-1 mb-2">
-            <h2 class="text-xs uppercase font-extrabold tracking-wider text-slate-400 flex items-center gap-1.5">
+          <div class="flex items-center justify-between px-1 mb-2.5">
+            <h2 class="text-sm uppercase font-black tracking-wider text-slate-300 flex items-center gap-1.5">
               <span>🍺</span> CERVEZAS DISPONIBLES
             </h2>
-            <span class="text-[11px] text-amber-400 font-medium">Toque para elegir presentación</span>
+            <span class="text-xs text-amber-400 font-bold">Toca para sumar unidades</span>
           </div>
 
-          <div class="grid grid-cols-2 gap-2.5">
+          <div class="grid grid-cols-2 gap-3.5">
             ${products.map(prod => {
               // Count packages in cart for this product
               const itemsInCart = cart.filter(c => c.productId === prod.id);
@@ -264,53 +264,53 @@ class AppController {
               return `
                 <button 
                   data-product-id="${prod.id}"
-                  class="beer-card relative text-left p-3 rounded-2xl border transition-all touch-press flex flex-col justify-between ${
+                  class="beer-card relative text-left p-3.5 rounded-3xl border-2 transition-all touch-press flex flex-col justify-between ${
                     inCartCount > 0 
-                      ? 'bg-slate-800/90 border-amber-500/70 shadow-lg glow-gold' 
-                      : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+                      ? 'bg-slate-800/95 border-amber-500 shadow-xl glow-gold' 
+                      : 'bg-slate-900/95 border-slate-800 hover:border-slate-700 shadow-lg'
                   }"
                 >
                   <!-- In-Cart Badge -->
                   ${inCartCount > 0 ? `
-                    <div class="absolute -top-2 -right-2 bg-amber-500 text-slate-950 font-black text-xs px-2.5 py-0.5 rounded-full shadow-lg border-2 border-slate-950">
-                      ${inCartCount} en carrito
+                    <div class="absolute -top-2.5 -right-2 bg-amber-500 text-slate-950 font-black text-xs px-3 py-1 rounded-full shadow-xl border-2 border-slate-950 flex items-center gap-1">
+                      <span>🛒</span> ${inCartCount} en carrito
                     </div>
                   ` : ''}
 
-                  <!-- Product Image / Icon & Volume -->
-                  <div class="flex items-start justify-between gap-2 mb-2">
-                    <div class="w-16 h-16 bg-slate-950/60 rounded-xl overflow-hidden flex items-center justify-center p-1 border border-slate-800/80">
-                      ${prod.image ? `
-                        <img src="${prod.image}" alt="${prod.name}" class="w-full h-full object-contain" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
-                        <span class="text-3xl hidden">${prod.icon || '🍺'}</span>
-                      ` : `
-                        <span class="text-3xl">${prod.icon || '🍺'}</span>
-                      `}
-                    </div>
-                    <span class="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full">
+                  <!-- Large Product Image Container -->
+                  <div class="relative w-full h-36 bg-slate-950/80 rounded-2xl overflow-hidden flex items-center justify-center p-2 border border-slate-800/90 shadow-inner mb-3">
+                    <span class="absolute top-2 right-2 text-xs font-black text-slate-200 bg-slate-900/90 px-2 py-0.5 rounded-lg border border-slate-700/80">
                       ${prod.volume}
                     </span>
+                    ${prod.image ? `
+                      <img src="${prod.image}" alt="${prod.name}" class="w-full h-full object-contain filter drop-shadow-md" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
+                      <span class="text-5xl hidden">${prod.icon || '🍺'}</span>
+                    ` : `
+                      <span class="text-5xl">${prod.icon || '🍺'}</span>
+                    `}
                   </div>
 
-                  <!-- Product Name -->
-                  <div>
-                    <div class="font-extrabold text-white text-sm leading-tight line-clamp-1">
+                  <!-- Product Name & Price (LARGER) -->
+                  <div class="space-y-1">
+                    <div class="font-black text-white text-base sm:text-lg leading-snug line-clamp-2">
                       ${prod.name}
                     </div>
-                    <div class="text-[11px] font-black text-amber-400 mt-0.5">
+                    <div class="text-base sm:text-lg font-black text-amber-400">
                       ${priceText}
                     </div>
                   </div>
 
-                  <!-- Stock Status & Touch prompt -->
-                  <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/80">
-                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Elegir ➔</span>
-                    <span class="text-[10px] font-black px-1.5 py-0.5 rounded ${
+                  <!-- Stock Status & Touch prompt (LARGER) -->
+                  <div class="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-800">
+                    <span class="text-xs font-black text-amber-400 uppercase tracking-tight flex items-center gap-0.5">
+                      + Sumar ➔
+                    </span>
+                    <span class="text-xs sm:text-sm font-black px-2 py-0.5 rounded-lg ${
                       isCriticalStock 
                         ? 'bg-red-500/20 text-red-400 border border-red-500/40 stock-alert' 
                         : isLowStock 
                           ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
-                          : 'bg-emerald-500/10 text-emerald-400'
+                          : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                     }">
                       ${prod.stock} un.
                     </span>
@@ -333,7 +333,7 @@ class AppController {
       };
     });
 
-    // Beer tap -> Open Presentation Picker Modal
+    // Beer tap -> Open Presentation Picker & Quantity Modal
     document.querySelectorAll('.beer-card').forEach(card => {
       card.onclick = () => {
         const productId = card.getAttribute('data-product-id');
@@ -342,7 +342,7 @@ class AppController {
     });
   }
 
-  // --- Modal: Selector de Presentación (Unidad, Sixpack, Caja, Jaba) ---
+  // --- Modal: Selector de Presentación y Cantidad con Flechas e Input Editable ---
   showPresentationModal(productId) {
     const product = store.state.products.find(p => p.id === productId);
     if (!product) return;
@@ -351,88 +351,239 @@ class AppController {
     if (!modalContainer) return;
 
     const presentations = product.presentations || [
-      { id: "unidad", name: "Unidad", units: 1, price: product.sellPrice || 1.00, icon: "🍺" }
+      { id: "unidad", name: "Unidad", units: 1, price: product.sellPrice || 1.00, icon: "🍺", badge: "1 un" }
     ];
 
-    modalContainer.innerHTML = `
-      <!-- Backdrop -->
-      <div id="presentation-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50"></div>
+    // Default presentation is 'unidad' (or the first one)
+    let selectedPresId = presentations.some(p => p.id === 'unidad') ? 'unidad' : presentations[0].id;
+    let quantity = 1;
 
-      <!-- Presentation Sheet -->
-      <div class="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto ios-blur rounded-t-3xl border-t border-slate-700 p-4 pb-safe-tab shadow-2xl drawer-enter">
-        <!-- Header -->
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div class="flex items-center gap-3">
-            <div class="w-12 h-12 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center p-1 border border-slate-800">
-              ${product.image ? `
-                <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
-                <span class="text-2xl hidden">${product.icon || '🍺'}</span>
-              ` : `
-                <span class="text-2xl">${product.icon || '🍺'}</span>
-              `}
+    const renderModalContent = () => {
+      const activePres = presentations.find(p => p.id === selectedPresId) || presentations[0];
+      const unitsPerPack = activePres.units || 1;
+      const totalUnitsToDeduct = unitsPerPack * quantity;
+      const totalPrice = activePres.price * quantity;
+      const hasEnoughStock = product.stock >= totalUnitsToDeduct;
+
+      modalContainer.innerHTML = `
+        <!-- Backdrop -->
+        <div id="presentation-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50"></div>
+
+        <!-- Presentation Sheet -->
+        <div class="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto ios-blur rounded-t-3xl border-t-2 border-slate-700 p-4 pb-safe-tab shadow-2xl drawer-enter max-h-[92vh] flex flex-col">
+          <!-- Header (BIGGER IMAGE & FONTS) -->
+          <div class="flex items-center justify-between pb-3.5 border-b border-slate-800">
+            <div class="flex items-center gap-3.5">
+              <div class="w-20 h-20 bg-slate-950/80 rounded-2xl overflow-hidden flex items-center justify-center p-2 border-2 border-slate-800 shadow-inner shrink-0">
+                ${product.image ? `
+                  <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain filter drop-shadow-md" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
+                  <span class="text-4xl hidden">${product.icon || '🍺'}</span>
+                ` : `
+                  <span class="text-4xl">${product.icon || '🍺'}</span>
+                `}
+              </div>
+              <div>
+                <h3 class="font-black text-white text-lg sm:text-xl leading-tight">${product.name}</h3>
+                <p class="text-xs sm:text-sm text-slate-300 font-semibold mt-0.5">
+                  ${product.volume} • Stock actual: <span class="text-emerald-400 font-black text-sm">${product.stock} un.</span>
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 class="font-black text-white text-base">${product.name}</h3>
-              <p class="text-xs text-slate-400 font-semibold">${product.volume} • Stock actual: <strong class="text-emerald-400">${product.stock} un.</strong></p>
+            <button id="btn-close-presentation" class="text-slate-300 hover:text-white w-10 h-10 rounded-full bg-slate-800 text-base font-bold flex items-center justify-center touch-press">
+              ✕
+            </button>
+          </div>
+
+          <!-- Body -->
+          <div class="py-3.5 space-y-3.5 overflow-y-auto no-scrollbar">
+            <!-- Presentation Selector (Chips) -->
+            ${presentations.length > 1 ? `
+              <div>
+                <div class="text-xs font-black uppercase tracking-wider text-amber-400 mb-2 px-1">
+                  SELECCIONA LA PRESENTACIÓN:
+                </div>
+                <div class="grid grid-cols-${presentations.length <= 3 ? presentations.length : 2} gap-2">
+                  ${presentations.map(pres => {
+                    const isSelected = pres.id === selectedPresId;
+                    return `
+                      <button 
+                        data-pres-select="${pres.id}"
+                        class="pres-chip py-3 px-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 touch-press transition-all ${
+                          isSelected 
+                            ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-lg glow-gold font-black scale-[1.02]' 
+                            : 'bg-slate-900/90 text-slate-300 border-slate-800 font-bold hover:bg-slate-800'
+                        }"
+                      >
+                        <span class="text-xl">${pres.icon || '🍺'}</span>
+                        <span class="text-xs font-black uppercase leading-tight">${pres.name}</span>
+                        <span class="text-sm font-black ${isSelected ? 'text-slate-950' : 'text-amber-400'}">
+                          ${store.formatCurrency(pres.price)}
+                        </span>
+                        <span class="text-[10px] ${isSelected ? 'text-slate-900 font-bold' : 'text-slate-400'}">
+                          ${pres.units} ${pres.units === 1 ? 'un.' : 'unidades'}
+                        </span>
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Quantity Stepper & Direct Typing Input -->
+            <div class="bg-slate-950/90 rounded-2xl p-4 border border-slate-800 space-y-3">
+              <div class="flex items-center justify-between px-1">
+                <span class="text-xs uppercase font-black text-amber-400 tracking-wider">
+                  CANTIDAD A SUMAR:
+                </span>
+                <span class="text-xs font-bold ${hasEnoughStock ? 'text-emerald-400' : 'text-red-400 font-black'}">
+                  Descuenta: <strong>${totalUnitsToDeduct} un.</strong> de stock
+                </span>
+              </div>
+
+              <!-- Main Input and +/- Arrow Buttons -->
+              <div class="flex items-center justify-center gap-3 pt-1">
+                <button 
+                  id="btn-qty-minus" 
+                  class="w-14 h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white text-2xl font-black flex items-center justify-center border border-slate-700 shadow-md touch-press"
+                  title="Disminuir"
+                >
+                  ▼
+                </button>
+
+                <div class="flex flex-col items-center">
+                  <input 
+                    type="number" 
+                    id="input-qty-number" 
+                    value="${quantity}" 
+                    min="1" 
+                    max="999"
+                    class="w-28 h-14 bg-slate-900 border-2 border-amber-500 rounded-2xl text-amber-400 text-3xl font-black text-center focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-inner select-all"
+                  />
+                  <span class="text-[10px] text-slate-400 font-medium mt-1">Escribe o usa flechas</span>
+                </div>
+
+                <button 
+                  id="btn-qty-plus" 
+                  class="w-14 h-14 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 text-2xl font-black flex items-center justify-center shadow-lg glow-gold touch-press"
+                  title="Aumentar"
+                >
+                  ▲
+                </button>
+              </div>
+
+              <!-- Quick Quantity Chips (+1, +2, +3, +5, +6, +12, +24) -->
+              <div class="flex items-center justify-center gap-1.5 pt-1 flex-wrap">
+                <span class="text-[10px] text-slate-400 font-bold mr-1">Rápido:</span>
+                ${[1, 2, 3, 5, 6, 12, 24].map(q => `
+                  <button 
+                    data-quick-add="${q}"
+                    class="btn-quick-chip py-1.5 px-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-black border border-slate-800 touch-press"
+                  >
+                    +${q}
+                  </button>
+                `).join('')}
+              </div>
             </div>
-          </div>
-          <button id="btn-close-presentation" class="text-slate-400 hover:text-white p-2 rounded-full bg-slate-800 text-sm touch-press">
-            ✕
-          </button>
-        </div>
 
-        <!-- Presentation Options -->
-        <div class="py-3.5 space-y-2.5">
-          <div class="text-[11px] font-extrabold uppercase tracking-wider text-amber-400 px-1">
-            SELECCIONE CÓMO DESEA VENDER:
-          </div>
+            <!-- Total Price Display & Giant Add Button -->
+            <div class="pt-1 space-y-2">
+              <div class="flex items-baseline justify-between px-2">
+                <span class="text-xs uppercase font-extrabold text-slate-400">Total a sumar:</span>
+                <div class="text-right">
+                  <span class="text-2xl font-black text-amber-400">${store.formatCurrency(totalPrice)}</span>
+                  <span class="text-xs text-slate-400 ml-1">(${quantity} × ${store.formatCurrency(activePres.price)})</span>
+                </div>
+              </div>
 
-          <div class="space-y-2">
-            ${presentations.map(pres => `
               <button 
-                data-pres-id="${pres.id}"
-                class="btn-select-presentation w-full p-3.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 flex items-center justify-between touch-press glow-gold transition-all"
+                id="btn-add-to-cart-submit"
+                class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 text-slate-950 font-black text-base sm:text-lg shadow-xl glow-emerald flex items-center justify-center gap-2 touch-press"
               >
-                <div class="flex items-center gap-3">
-                  <span class="text-2xl">${pres.icon || '🍺'}</span>
-                  <div class="text-left">
-                    <div class="font-black text-white text-sm">${pres.name}</div>
-                    <div class="text-[11px] text-slate-400">Descuenta: <strong>${pres.units} ${pres.units === 1 ? 'unidad' : 'unidades'}</strong></div>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <span class="text-xl font-black text-amber-400">${store.formatCurrency(pres.price)}</span>
-                  <span class="text-xs bg-amber-500 text-slate-950 font-black px-2.5 py-1.5 rounded-xl shadow-md">+ Sumar</span>
-                </div>
+                <span>🛒</span>
+                <span>AGREGAR AL CARRITO • ${store.formatCurrency(totalPrice)}</span>
               </button>
-            `).join('')}
+            </div>
           </div>
         </div>
-      </div>
-    `;
+      `;
 
-    const closeModal = () => {
-      modalContainer.innerHTML = '';
+      // Attach events for this modal state
+      const backdrop = document.getElementById('presentation-backdrop');
+      const btnClose = document.getElementById('btn-close-presentation');
+      if (backdrop) backdrop.onclick = () => { modalContainer.innerHTML = ''; };
+      if (btnClose) btnClose.onclick = () => { modalContainer.innerHTML = ''; };
+
+      // Presentation chips
+      modalContainer.querySelectorAll('button[data-pres-select]').forEach(btn => {
+        btn.onclick = () => {
+          selectedPresId = btn.getAttribute('data-pres-select');
+          store.playTapSound();
+          renderModalContent();
+        };
+      });
+
+      // Quantity controls
+      const btnMinus = document.getElementById('btn-qty-minus');
+      const btnPlus = document.getElementById('btn-qty-plus');
+      const inputQty = document.getElementById('input-qty-number');
+
+      if (btnMinus) {
+        btnMinus.onclick = () => {
+          if (quantity > 1) {
+            quantity -= 1;
+            store.playTapSound();
+            renderModalContent();
+          }
+        };
+      }
+
+      if (btnPlus) {
+        btnPlus.onclick = () => {
+          quantity += 1;
+          store.playTapSound();
+          renderModalContent();
+        };
+      }
+
+      if (inputQty) {
+        inputQty.onchange = (e) => {
+          let val = parseInt(e.target.value, 10);
+          if (isNaN(val) || val < 1) val = 1;
+          quantity = val;
+          renderModalContent();
+        };
+        inputQty.onkeyup = (e) => {
+          if (e.key === 'Enter') {
+            document.getElementById('btn-add-to-cart-submit')?.click();
+          }
+        };
+      }
+
+      // Quick chips
+      modalContainer.querySelectorAll('button[data-quick-add]').forEach(btn => {
+        btn.onclick = () => {
+          const addVal = parseInt(btn.getAttribute('data-quick-add'), 10) || 1;
+          quantity += addVal;
+          store.playTapSound();
+          renderModalContent();
+        };
+      });
+
+      // Submit
+      const btnSubmit = document.getElementById('btn-add-to-cart-submit');
+      if (btnSubmit) {
+        btnSubmit.onclick = () => {
+          store.addToCart(productId, selectedPresId, quantity);
+          this.showToast(`+${quantity} ${activePres.name} agregada(s)`);
+          modalContainer.innerHTML = '';
+        };
+      }
     };
 
-    const backdrop = document.getElementById('presentation-backdrop');
-    const btnClose = document.getElementById('btn-close-presentation');
-    if (backdrop) backdrop.onclick = closeModal;
-    if (btnClose) btnClose.onclick = closeModal;
-
-    modalContainer.querySelectorAll('.btn-select-presentation').forEach(btn => {
-      btn.onclick = () => {
-        const presId = btn.getAttribute('data-pres-id');
-        store.addToCart(productId, presId, 1);
-        const presObj = presentations.find(p => p.id === presId);
-        this.showToast(`+1 ${presObj ? presObj.name : ''} agregado`);
-        closeModal();
-      };
-    });
+    renderModalContent();
   }
 
-  // --- Floating Cart Bar & Checkout Drawer ---
+  // --- Floating Cart Bar & Checkout Drawer (Flicker-Free, In-Place DOM Updates) ---
   renderCartFloatingBar() {
     let container = document.getElementById('cart-drawer-container');
     if (!container) {
@@ -448,29 +599,31 @@ class AppController {
       return;
     }
 
-    // Floating bar (when drawer closed)
+    // Floating bar (when drawer is closed)
     if (!this.cartDrawerOpen) {
       container.innerHTML = `
         <div class="fixed bottom-20 left-0 right-0 z-40 px-3 max-w-md mx-auto">
-          <div class="ios-blur rounded-2xl p-3 border border-amber-500/40 shadow-2xl flex items-center justify-between glow-gold">
-            <div class="flex items-center gap-3">
-              <div class="w-11 h-11 bg-amber-500 text-slate-950 rounded-xl flex items-center justify-center font-black text-lg shadow-md">
+          <div class="ios-blur rounded-3xl p-3.5 border-2 border-amber-500/50 shadow-2xl flex items-center justify-between glow-gold">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 bg-amber-500 text-slate-950 rounded-2xl flex items-center justify-center font-black text-xl shadow-md">
                 ${cartDetailed.totalPackages}
               </div>
               <div>
-                <div class="text-[11px] text-slate-300 font-semibold uppercase tracking-wider">
+                <div class="text-xs text-slate-300 font-extrabold uppercase tracking-wider">
                   ${cartDetailed.totalUnits} cervezas en total
                 </div>
-                <div class="text-xl font-black text-amber-400">${store.formatCurrency(cartDetailed.total)}</div>
+                <div class="text-2xl font-black text-amber-400 leading-tight">
+                  ${store.formatCurrency(cartDetailed.total)}
+                </div>
               </div>
             </div>
 
             <button 
               id="btn-open-cart-drawer"
-              class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-3 rounded-xl text-sm flex items-center gap-2 shadow-lg touch-press"
+              class="bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-black px-6 py-3.5 rounded-2xl text-base flex items-center gap-2 shadow-lg glow-emerald touch-press"
             >
               <span>COBRAR</span>
-              <span class="text-lg">→</span>
+              <span class="text-xl">➔</span>
             </button>
           </div>
         </div>
@@ -487,180 +640,238 @@ class AppController {
       return;
     }
 
-    // Full Checkout Drawer (when drawer open)
-    const currentSeller = store.getCurrentSellerObj();
+    // Full Checkout Drawer: If the drawer is already in DOM, update ONLY in-place (ZERO flicker!)
+    let drawerSheet = document.getElementById('cart-drawer-sheet');
+    const isFirstOpen = !drawerSheet;
 
-    container.innerHTML = `
-      <!-- Backdrop -->
-      <div id="cart-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50"></div>
+    if (isFirstOpen) {
+      container.innerHTML = `
+        <!-- Backdrop -->
+        <div id="cart-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50"></div>
 
-      <!-- Drawer Content -->
-      <div class="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto ios-blur rounded-t-3xl border-t border-slate-700 p-4 pb-safe-tab shadow-2xl drawer-enter max-h-[92vh] flex flex-col">
-        <!-- Header -->
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div class="flex items-center gap-2">
-            <span class="text-2xl">🛒</span>
+        <!-- Drawer Content -->
+        <div id="cart-drawer-sheet" class="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto ios-blur rounded-t-3xl border-t-2 border-slate-700 p-4 pb-safe-tab shadow-2xl drawer-enter max-h-[92vh] flex flex-col">
+          <!-- Header -->
+          <div class="flex items-center justify-between pb-3.5 border-b border-slate-800">
+            <div class="flex items-center gap-2.5">
+              <span class="text-3xl">🛒</span>
+              <div>
+                <div class="font-black text-white text-lg">Carrito de Venta</div>
+                <div id="cart-seller-label" class="text-xs text-amber-400 font-bold">Atiende: ${store.getCurrentSellerObj().name}</div>
+              </div>
+            </div>
+            <button id="btn-close-cart" class="text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-slate-800 text-sm font-bold touch-press">
+              ✕ Cerrar
+            </button>
+          </div>
+
+          <!-- Items List Container (Updated in-place without re-animating the drawer!) -->
+          <div id="cart-items-scroll-list" class="overflow-y-auto no-scrollbar py-3 space-y-2.5 flex-1">
+            <!-- Injected by updateCartDrawerItems() -->
+          </div>
+
+          <!-- Checkout Controls Container -->
+          <div id="cart-checkout-footer" class="pt-2 border-t border-slate-800 space-y-3">
+            <!-- Payment Method Toggle -->
             <div>
-              <div class="font-extrabold text-white text-base">Carrito de Venta</div>
-              <div class="text-xs text-amber-400 font-semibold">Atiende: ${currentSeller.name}</div>
-            </div>
-          </div>
-          <button id="btn-close-cart" class="text-slate-400 hover:text-white p-2 rounded-full bg-slate-800 text-sm touch-press">
-            ✕ Cerrar
-          </button>
-        </div>
-
-        <!-- Items List -->
-        <div class="overflow-y-auto no-scrollbar py-3 space-y-2.5 flex-1">
-          ${cartDetailed.items.map(item => `
-            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
-              <div class="flex-1 mr-2">
-                <div class="font-bold text-sm text-white">${item.product ? item.product.name : 'Cerveza'}</div>
-                <div class="text-xs text-amber-400 font-semibold">${item.presentationName} • ${store.formatCurrency(item.price)}</div>
-                <div class="text-[10px] text-slate-400">Descuenta: ${item.totalUnits} un. de stock</div>
-              </div>
-
-              <!-- Quantity Controls -->
-              <div class="flex items-center gap-2">
+              <div class="text-xs font-black text-slate-300 uppercase tracking-wider mb-2">MÉTODO DE PAGO:</div>
+              <div class="grid grid-cols-2 gap-2">
                 <button 
-                  data-action="cart-minus" 
-                  data-cart-key="${item.cartKey}"
-                  class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black text-base flex items-center justify-center border border-slate-700 touch-press"
+                  id="btn-pay-efectivo" 
+                  class="py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press ${
+                    this.paymentMethod === 'efectivo' && !this.isFiado
+                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 glow-emerald' 
+                      : 'bg-slate-900 text-slate-300 border-slate-800'
+                  }"
                 >
-                  -
+                  <span class="text-lg">💵</span> EFECTIVO
                 </button>
-                <span class="font-black text-amber-400 text-base w-6 text-center">${item.quantity}</span>
                 <button 
-                  data-action="cart-plus" 
-                  data-cart-key="${item.cartKey}"
-                  class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black text-base flex items-center justify-center border border-slate-700 touch-press"
+                  id="btn-pay-deuna" 
+                  class="py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press ${
+                    this.paymentMethod === 'deuna' && !this.isFiado
+                      ? 'bg-sky-500 text-white border-sky-400 glow-gold' 
+                      : 'bg-slate-900 text-slate-300 border-slate-800'
+                  }"
                 >
-                  +
+                  <span class="text-lg">📲</span> DEUNA / TRANSF.
                 </button>
-                <div class="text-right ml-2 min-w-[50px]">
-                  <div class="font-black text-white text-sm">${store.formatCurrency(item.subtotal)}</div>
-                </div>
               </div>
             </div>
-          `).join('')}
-        </div>
 
-        <!-- Payment Method Toggle -->
-        <div class="pt-2 border-t border-slate-800 space-y-3">
-          <div>
-            <div class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">MÉTODO DE PAGO:</div>
-            <div class="grid grid-cols-2 gap-2">
-              <button 
-                id="btn-pay-efectivo" 
-                class="py-2.5 px-3 rounded-xl border text-xs font-black flex items-center justify-center gap-2 touch-press ${
-                  this.paymentMethod === 'efectivo' && !this.isFiado
-                    ? 'bg-emerald-500 text-slate-950 border-emerald-400 glow-emerald' 
-                    : 'bg-slate-900 text-slate-300 border-slate-800'
-                }"
-              >
-                <span>💵</span> EFECTIVO
-              </button>
-              <button 
-                id="btn-pay-deuna" 
-                class="py-2.5 px-3 rounded-xl border text-xs font-black flex items-center justify-center gap-2 touch-press ${
-                  this.paymentMethod === 'deuna' && !this.isFiado
-                    ? 'bg-sky-500 text-white border-sky-400 glow-gold' 
-                    : 'bg-slate-900 text-slate-300 border-slate-800'
-                }"
-              >
-                <span>📲</span> DEUNA / TRANSF.
-              </button>
-            </div>
-          </div>
-
-          <!-- Fiado / Por Cobrar Toggle -->
-          <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800">
-            <div class="flex items-center justify-between">
-              <label for="toggle-fiado" class="flex items-center gap-2 cursor-pointer">
-                <span class="text-base">📋</span>
-                <div>
-                  <span class="text-xs font-bold text-white block">¿Es Fiado / Por Cobrar?</span>
-                  <span class="text-[10px] text-slate-400">No suma efectivo a caja hasta que pague</span>
-                </div>
-              </label>
-              <input 
-                type="checkbox" 
-                id="toggle-fiado" 
-                ${this.isFiado ? 'checked' : ''} 
-                class="w-5 h-5 accent-amber-500 rounded cursor-pointer"
-              />
-            </div>
-
-            ${this.isFiado ? `
-              <div class="mt-2.5 pt-2 border-t border-slate-800">
-                <label class="text-[10px] text-amber-400 font-bold block mb-1">NOMBRE DEL CLIENTE:</label>
+            <!-- Fiado / Por Cobrar Toggle -->
+            <div class="bg-slate-900/90 p-3 rounded-2xl border border-slate-800">
+              <div class="flex items-center justify-between">
+                <label for="toggle-fiado" class="flex items-center gap-2 cursor-pointer">
+                  <span class="text-xl">📋</span>
+                  <div>
+                    <span class="text-sm font-black text-white block">¿Es Fiado / Por Cobrar?</span>
+                    <span class="text-xs text-slate-400">No suma dinero físico hasta que el cliente pague</span>
+                  </div>
+                </label>
                 <input 
-                  type="text" 
-                  id="input-customer-name" 
-                  placeholder="Ej. Don Carlos, Vecino Juan..." 
-                  class="w-full bg-slate-950 border border-amber-500/50 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
-                  autofocus
+                  type="checkbox" 
+                  id="toggle-fiado" 
+                  ${this.isFiado ? 'checked' : ''} 
+                  class="w-6 h-6 accent-amber-500 rounded cursor-pointer"
                 />
               </div>
-            ` : ''}
-          </div>
 
-          <!-- Summary & Giant Action Button -->
-          <div class="flex items-baseline justify-between px-1">
-            <span class="text-xs text-slate-400 font-bold uppercase">Total a Cobrar:</span>
-            <div class="text-right">
-              <div class="text-2xl font-black text-amber-400">${store.formatCurrency(cartDetailed.total)}</div>
-              <div class="text-[11px] text-emerald-400 font-semibold">${cartDetailed.totalUnits} cervezas en total</div>
+              ${this.isFiado ? `
+                <div class="mt-2.5 pt-2.5 border-t border-slate-800">
+                  <label class="text-xs text-amber-400 font-black block mb-1">NOMBRE DEL CLIENTE:</label>
+                  <input 
+                    type="text" 
+                    id="input-customer-name" 
+                    placeholder="Ej. Don Carlos, Vecino Juan..." 
+                    class="w-full bg-slate-950 border-2 border-amber-500/60 rounded-xl px-3.5 py-2.5 text-base text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 font-bold"
+                  />
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Summary & Giant Action Button -->
+            <div class="flex items-baseline justify-between px-1">
+              <span class="text-xs text-slate-400 font-black uppercase">Total a Cobrar:</span>
+              <div class="text-right">
+                <div id="cart-total-display" class="text-3xl font-black text-amber-400 leading-tight">
+                  ${store.formatCurrency(cartDetailed.total)}
+                </div>
+                <div id="cart-units-display" class="text-xs font-bold text-emerald-400">
+                  ${cartDetailed.totalUnits} cervezas en total
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 pt-1">
+              <button 
+                id="btn-clear-cart"
+                class="col-span-1 bg-slate-900 hover:bg-slate-800 text-red-400 border border-slate-800 font-black text-xs py-4 rounded-2xl touch-press flex items-center justify-center gap-1"
+              >
+                <span>🗑️</span> Vaciar
+              </button>
+              <button 
+                id="btn-confirm-sale"
+                class="col-span-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-base sm:text-lg py-4 rounded-2xl shadow-xl flex items-center justify-center gap-2 touch-press glow-gold"
+              >
+                <span>🍺</span>
+                <span id="btn-confirm-sale-text">REGISTRAR VENTA (${store.formatCurrency(cartDetailed.total)})</span>
+              </button>
             </div>
           </div>
+        </div>
+      `;
 
-          <div class="grid grid-cols-4 gap-2 pt-1">
-            <button 
-              id="btn-clear-cart"
-              class="col-span-1 bg-slate-900 hover:bg-slate-800 text-red-400 border border-slate-800 font-bold text-xs py-3.5 rounded-xl touch-press flex items-center justify-center gap-1"
-            >
-              <span>🗑️</span> Vaciar
-            </button>
-            <button 
-              id="btn-confirm-sale"
-              class="col-span-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-base py-3.5 rounded-xl shadow-xl flex items-center justify-center gap-2 touch-press glow-gold"
-            >
-              <span>🍺</span>
-              <span>REGISTRAR VENTA (${store.formatCurrency(cartDetailed.total)})</span>
-            </button>
+      // Remove drawer-enter animation class after initial entrance so updates never re-trigger animation!
+      setTimeout(() => {
+        const sheet = document.getElementById('cart-drawer-sheet');
+        if (sheet) sheet.classList.remove('drawer-enter');
+      }, 350);
+
+      const backdrop = document.getElementById('cart-backdrop');
+      const btnClose = document.getElementById('btn-close-cart');
+      const closeDrawer = () => {
+        this.cartDrawerOpen = false;
+        this.renderCartFloatingBar();
+      };
+      if (backdrop) backdrop.onclick = closeDrawer;
+      if (btnClose) btnClose.onclick = closeDrawer;
+    }
+
+    // Update inner cart contents and totals in-place (ZERO flicker)
+    this.updateCartDrawerItems(cartDetailed);
+  }
+
+  updateCartDrawerItems(cartDetailed) {
+    const listContainer = document.getElementById('cart-items-scroll-list');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = cartDetailed.items.map(item => `
+      <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-900/90 border border-slate-800">
+        <div class="flex items-center gap-3 flex-1 mr-2">
+          <div class="w-12 h-12 bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center p-1 border border-slate-800 shrink-0">
+            ${item.product && item.product.image ? `
+              <img src="${item.product.image}" alt="${item.product.name}" class="w-full h-full object-contain" />
+            ` : `
+              <span class="text-2xl">${item.product?.icon || '🍺'}</span>
+            `}
+          </div>
+          <div>
+            <div class="font-black text-base text-white leading-tight">${item.product ? item.product.name : 'Cerveza'}</div>
+            <div class="text-sm text-amber-400 font-extrabold">${item.presentationName} • ${store.formatCurrency(item.price)}</div>
+            <div class="text-[11px] text-slate-400">Descuenta: ${item.totalUnits} un. de stock</div>
+          </div>
+        </div>
+
+        <!-- Quantity Stepper Controls (Instant update with zero flicker) -->
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button 
+            data-cart-minus="${item.cartKey}"
+            class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-xl flex items-center justify-center border border-slate-700 touch-press"
+          >
+            -
+          </button>
+          
+          <input 
+            type="number" 
+            min="1" 
+            max="999"
+            data-cart-input="${item.cartKey}" 
+            value="${item.quantity}" 
+            class="w-12 h-10 text-center bg-slate-950 border border-amber-500/60 rounded-xl text-amber-300 font-black text-base focus:outline-none focus:border-amber-400"
+          />
+
+          <button 
+            data-cart-plus="${item.cartKey}"
+            class="w-10 h-10 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xl flex items-center justify-center shadow-md touch-press"
+          >
+            +
+          </button>
+
+          <div class="text-right ml-2 min-w-[55px]">
+            <div class="font-black text-white text-base">${store.formatCurrency(item.subtotal)}</div>
           </div>
         </div>
       </div>
-    `;
+    `).join('');
 
-    // Drawer events
-    const backdrop = document.getElementById('cart-backdrop');
-    const btnClose = document.getElementById('btn-close-cart');
-    const closeDrawer = () => {
-      this.cartDrawerOpen = false;
-      this.renderCartFloatingBar();
-    };
+    // Update totals displays
+    const totalDisplay = document.getElementById('cart-total-display');
+    const unitsDisplay = document.getElementById('cart-units-display');
+    const confirmBtnText = document.getElementById('btn-confirm-sale-text');
 
-    if (backdrop) backdrop.onclick = closeDrawer;
-    if (btnClose) btnClose.onclick = closeDrawer;
+    if (totalDisplay) totalDisplay.innerText = store.formatCurrency(cartDetailed.total);
+    if (unitsDisplay) unitsDisplay.innerText = `${cartDetailed.totalUnits} cervezas en total`;
+    if (confirmBtnText) confirmBtnText.innerText = `REGISTRAR VENTA (${store.formatCurrency(cartDetailed.total)})`;
 
-    // Cart items +/-
-    container.querySelectorAll('button[data-action="cart-plus"]').forEach(btn => {
+    // Attach +/- events
+    listContainer.querySelectorAll('button[data-cart-plus]').forEach(btn => {
       btn.onclick = () => {
-        const cartKey = btn.getAttribute('data-cart-key');
-        store.updateCartQuantity(cartKey, 1);
-        this.renderCartFloatingBar();
+        const key = btn.getAttribute('data-cart-plus');
+        store.updateCartQuantity(key, 1);
       };
     });
 
-    container.querySelectorAll('button[data-action="cart-minus"]').forEach(btn => {
+    listContainer.querySelectorAll('button[data-cart-minus]').forEach(btn => {
       btn.onclick = () => {
-        const cartKey = btn.getAttribute('data-cart-key');
-        store.updateCartQuantity(cartKey, -1);
-        this.renderCartFloatingBar();
+        const key = btn.getAttribute('data-cart-minus');
+        store.updateCartQuantity(key, -1);
       };
     });
 
+    listContainer.querySelectorAll('input[data-cart-input]').forEach(input => {
+      input.onchange = (e) => {
+        const key = input.getAttribute('data-cart-input');
+        const val = parseInt(e.target.value, 10);
+        store.setCartQuantity(key, val);
+      };
+    });
+
+    // Reattach checkout controls
+    this.attachCheckoutFooterEvents();
+  }
+
+  attachCheckoutFooterEvents() {
     // Payment methods
     const btnEfectivo = document.getElementById('btn-pay-efectivo');
     const btnDeuna = document.getElementById('btn-pay-deuna');
@@ -671,7 +882,7 @@ class AppController {
         this.paymentMethod = 'efectivo';
         this.isFiado = false;
         store.playTapSound();
-        this.renderCartFloatingBar();
+        this.updatePaymentButtons();
       };
     }
 
@@ -680,7 +891,7 @@ class AppController {
         this.paymentMethod = 'deuna';
         this.isFiado = false;
         store.playTapSound();
-        this.renderCartFloatingBar();
+        this.updatePaymentButtons();
       };
     }
 
@@ -688,6 +899,10 @@ class AppController {
       toggleFiado.onchange = (e) => {
         this.isFiado = e.target.checked;
         store.playTapSound();
+        this.cartDrawerOpen = true;
+        // Re-render the full drawer shell to show/hide customer name input
+        const drawerSheet = document.getElementById('cart-drawer-sheet');
+        if (drawerSheet) drawerSheet.remove();
         this.renderCartFloatingBar();
       };
     }
@@ -731,6 +946,23 @@ class AppController {
           this.render();
         }
       };
+    }
+  }
+
+  updatePaymentButtons() {
+    const btnEfectivo = document.getElementById('btn-pay-efectivo');
+    const btnDeuna = document.getElementById('btn-pay-deuna');
+    if (btnEfectivo && btnDeuna) {
+      if (this.paymentMethod === 'efectivo' && !this.isFiado) {
+        btnEfectivo.className = 'py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press bg-emerald-500 text-slate-950 border-emerald-400 glow-emerald';
+        btnDeuna.className = 'py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press bg-slate-900 text-slate-300 border-slate-800';
+      } else if (this.paymentMethod === 'deuna' && !this.isFiado) {
+        btnEfectivo.className = 'py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press bg-slate-900 text-slate-300 border-slate-800';
+        btnDeuna.className = 'py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press bg-sky-500 text-white border-sky-400 glow-gold';
+      } else {
+        btnEfectivo.className = 'py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press bg-slate-900 text-slate-300 border-slate-800';
+        btnDeuna.className = 'py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press bg-slate-900 text-slate-300 border-slate-800';
+      }
     }
   }
 
