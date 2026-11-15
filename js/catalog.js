@@ -1,164 +1,106 @@
 // ========================================================
-// Control Birras - Catálogo Inicial de Cervezas de Ecuador
-// Precios reales en USD, costos promedio y stock inicial
+// Control Birras - Catálogo Oficial de Cervezas
+// Tienda de Barrio - Ecuador (USD $)
 // ========================================================
 
 export const INITIAL_PRODUCTS = [
   {
-    id: "pilsener-600",
-    name: "Pilsener 600ml",
-    category: "Retornable",
-    volume: "600 ml",
+    id: "pilsener-lata-355",
+    name: "Pilsener lata",
+    volume: "355 ml",
+    type: "Lata",
+    image: "img/pilsener-lata.jpg",
     icon: "🍺",
     color: "#f59e0b",
-    sellPrice: 1.50,
-    costPrice: 1.15,
-    stock: 48,
-    minStockAlert: 12,
-    jabaSize: 12
+    stock: 33,
+    costPrice: 0.75,
+    minStockAlert: 10,
+    presentations: [
+      { id: "unidad", name: "Unidad", units: 1, price: 1.00, icon: "🍺", badge: "1 un" },
+      { id: "sixpack", name: "Sixpack", units: 6, price: 6.00, icon: "🧊", badge: "6 un" },
+      { id: "caja", name: "Caja", units: 24, price: 22.00, icon: "📦", badge: "24 un" }
+    ]
   },
   {
-    id: "pilsener-light-600",
-    name: "Pilsener Light 600ml",
-    category: "Retornable",
-    volume: "600 ml",
+    id: "amstel-lata-355",
+    name: "Amstel lata",
+    volume: "355 ml",
+    type: "Lata",
+    image: "img/amstel-lata.jpg",
     icon: "🍻",
-    color: "#38bdf8",
-    sellPrice: 1.50,
-    costPrice: 1.15,
-    stock: 36,
-    minStockAlert: 12,
-    jabaSize: 12
+    color: "#ef4444",
+    stock: 13,
+    costPrice: 0.90,
+    minStockAlert: 6,
+    presentations: [
+      { id: "unidad", name: "Unidad", units: 1, price: 1.25, icon: "🍺", badge: "1 un" }
+    ]
   },
   {
     id: "club-verde-330",
-    name: "Club Verde 330ml",
-    category: "Personal",
+    name: "Club verde",
     volume: "330 ml",
+    type: "Botella / Pack",
+    image: "img/club-verde-330.png",
     icon: "🍾",
     color: "#10b981",
-    sellPrice: 1.25,
+    stock: 72,
     costPrice: 0.90,
-    stock: 24,
-    minStockAlert: 8,
-    jabaSize: 24
-  },
-  {
-    id: "club-verde-600",
-    name: "Club Verde 600ml",
-    category: "Retornable",
-    volume: "600 ml",
-    icon: "🍺",
-    color: "#059669",
-    sellPrice: 1.75,
-    costPrice: 1.35,
-    stock: 30,
     minStockAlert: 12,
-    jabaSize: 12
+    presentations: [
+      { id: "unidad", name: "Unidad", units: 1, price: 1.25, icon: "🍺", badge: "1 un" },
+      { id: "sixpack", name: "Sixpack", units: 6, price: 7.50, icon: "🧊", badge: "6 un" },
+      { id: "caja", name: "Caja", units: 24, price: 30.00, icon: "📦", badge: "24 un" }
+    ]
   },
   {
-    id: "club-platino-330",
-    name: "Club Platino 330ml",
-    category: "Personal",
+    id: "corona-330",
+    name: "Corona",
     volume: "330 ml",
-    icon: "✨",
-    color: "#94a3b8",
-    sellPrice: 1.50,
-    costPrice: 1.10,
-    stock: 18,
-    minStockAlert: 6,
-    jabaSize: 24
-  },
-  {
-    id: "corona-355",
-    name: "Corona Extra 355ml",
-    category: "Importada",
-    volume: "355 ml",
+    type: "Botella / Pack",
+    image: "img/corona-330.jpg",
     icon: "👑",
     color: "#facc15",
-    sellPrice: 2.00,
-    costPrice: 1.45,
-    stock: 20,
+    stock: 21,
+    costPrice: 1.10,
     minStockAlert: 6,
-    jabaSize: 24
+    presentations: [
+      { id: "unidad", name: "Unidad", units: 1, price: 1.50, icon: "🍺", badge: "1 un" },
+      { id: "sixpack", name: "Sixpack", units: 6, price: 8.50, icon: "🧊", badge: "6 un" },
+      { id: "caja", name: "Caja", units: 24, price: 33.00, icon: "📦", badge: "24 un" }
+    ]
   },
   {
-    id: "stella-330",
-    name: "Stella Artois 330ml",
-    category: "Importada",
-    volume: "330 ml",
+    id: "heineken-250",
+    name: "Heineken",
+    volume: "250 ml",
+    type: "Botella",
+    image: "img/heineken-250.png",
     icon: "⭐",
-    color: "#ef4444",
-    sellPrice: 2.00,
-    costPrice: 1.50,
+    color: "#059669",
     stock: 14,
+    costPrice: 0.75,
     minStockAlert: 6,
-    jabaSize: 24
+    presentations: [
+      { id: "unidad", name: "Unidad", units: 1, price: 1.00, icon: "🍺", badge: "1 un" }
+    ]
   },
   {
-    id: "budweiser-355",
-    name: "Budweiser 355ml",
-    category: "Personal",
-    volume: "355 ml",
-    icon: "🔴",
-    color: "#dc2626",
-    sellPrice: 1.25,
-    costPrice: 0.90,
-    stock: 18,
-    minStockAlert: 6,
-    jabaSize: 24
-  },
-  {
-    id: "biela-600",
-    name: "Biela 600ml",
-    category: "Retornable",
-    volume: "600 ml",
+    id: "club-verde-550",
+    name: "Club verde (550ml)",
+    volume: "550 ml",
+    type: "Medio Litro / Jaba",
+    image: "img/club-verde-550.jpg",
     icon: "🍺",
-    color: "#eab308",
-    sellPrice: 1.35,
-    costPrice: 1.00,
-    stock: 24,
-    minStockAlert: 8,
-    jabaSize: 12
-  },
-  {
-    id: "jaba-pilsener-600",
-    name: "Jaba Pilsener 600 (x12)",
-    category: "Jaba Completa",
-    volume: "12 botellas",
-    icon: "📦",
-    color: "#d97706",
-    sellPrice: 16.00,
-    costPrice: 13.50,
-    stock: 6,
-    minStockAlert: 2,
-    jabaSize: 1
-  },
-  {
-    id: "jaba-club-600",
-    name: "Jaba Club Verde (x12)",
-    category: "Jaba Completa",
-    volume: "12 botellas",
-    icon: "📦",
     color: "#047857",
-    sellPrice: 19.00,
-    costPrice: 15.80,
-    stock: 4,
-    minStockAlert: 2,
-    jabaSize: 1
-  },
-  {
-    id: "sixpack-pilsener-light",
-    name: "Sixpack Pilsener Light",
-    category: "Pack Latas",
-    volume: "6 latas",
-    icon: "🧊",
-    color: "#0284c7",
-    sellPrice: 6.50,
-    costPrice: 5.00,
-    stock: 8,
-    minStockAlert: 3,
-    jabaSize: 1
+    stock: 27,
+    costPrice: 1.50,
+    minStockAlert: 12,
+    presentations: [
+      { id: "unidad", name: "Unidad (Líquido)", units: 1, price: 2.00, icon: "🍺", badge: "1 un" },
+      { id: "con-botella", name: "Unidad con Botella", units: 1, price: 2.25, icon: "🍾", badge: "+ Envase" },
+      { id: "jaba", name: "Jaba Completa (12 un.)", units: 12, price: 23.00, icon: "📦", badge: "12 un" }
+    ]
   }
 ];
 

@@ -21,12 +21,12 @@ class Store {
     this.firebaseApp = null;
     this.firestore = null;
     this.unsubscribeFirestore = [];
-    this.syncStatus = 'connecting'; // 'local' | 'connecting' | 'online' | 'error'
+    this.syncStatus = 'connecting';
     this.syncError = '';
 
     // Load initial state from LocalStorage or Defaults
     this.state = {
-      products: this.loadFromStorage('cb_products', INITIAL_PRODUCTS),
+      products: this.loadFromStorage('cb_products_v4', INITIAL_PRODUCTS),
       sales: this.loadFromStorage('cb_sales', []),
       stockMovements: this.loadFromStorage('cb_movements', []),
       currentSeller: localStorage.getItem('cb_current_seller') || 'jhojann-gabriel',
@@ -78,7 +78,7 @@ class Store {
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
-    hours = hours ? hours : 12; // 0 should be 12
+    hours = hours ? hours : 12;
     return `${hours}:${minutes} ${ampm}`;
   }
 
@@ -100,7 +100,7 @@ class Store {
 
   saveToStorage() {
     try {
-      localStorage.setItem('cb_products', JSON.stringify(this.state.products));
+      localStorage.setItem('cb_products_v4', JSON.stringify(this.state.products));
       localStorage.setItem('cb_sales', JSON.stringify(this.state.sales));
       localStorage.setItem('cb_movements', JSON.stringify(this.state.stockMovements));
       localStorage.setItem('cb_current_seller', this.state.currentSeller);
@@ -113,7 +113,7 @@ class Store {
     }
   }
 
-  // --- Audio Feedback Synth (No external files needed) ---
+  // --- Audio Feedback Synth ---
   initAudio() {
     if (!this.audioCtx) {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -142,9 +142,7 @@ class Store {
       osc.start();
       osc.stop(this.audioCtx.currentTime + 0.05);
       if (navigator.vibrate) navigator.vibrate(10);
-    } catch (e) {
-      // Audio not supported or blocked
-    }
+    } catch (e) {}
   }
 
   playSaleSuccessSound() {
@@ -154,11 +152,10 @@ class Store {
       if (!this.audioCtx) return;
       const t = this.audioCtx.currentTime;
 
-      // Bell 1
       const osc1 = this.audioCtx.createOscillator();
       const gain1 = this.audioCtx.createGain();
       osc1.type = 'triangle';
-      osc1.frequency.setValueAtTime(987.77, t); // B5
+      osc1.frequency.setValueAtTime(987.77, t);
       gain1.gain.setValueAtTime(0.2, t);
       gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
       osc1.connect(gain1);
@@ -166,11 +163,10 @@ class Store {
       osc1.start(t);
       osc1.stop(t + 0.35);
 
-      // Bell 2 (Higher chord harmony)
       const osc2 = this.audioCtx.createOscillator();
       const gain2 = this.audioCtx.createGain();
       osc2.type = 'triangle';
-      osc2.frequency.setValueAtTime(1318.51, t + 0.1); // E6
+      osc2.frequency.setValueAtTime(1318.51, t + 0.1);
       gain2.gain.setValueAtTime(0.25, t + 0.1);
       gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
       osc2.connect(gain2);
@@ -213,17 +209,39 @@ class Store {
     return SELLERS.find(s => s.id === this.state.currentSeller) || SELLERS[0];
   }
 
-  // --- Cart Management ---
-  addToCart(productId, quantity = 1) {
+  // --- Cart Management with Multi-Presentation Support ---
+  addToCart(productId, presentationId = null, quantity = 1) {
     const product = this.state.products.find(p => p.id === productId);
     if (!product) return;
 
-    const existingIndex = this.state.cart.findIndex(item => item.productId === productId);
+    // Find requested presentation or default to the first one
+    let pres = null;
+    if (product.presentations && product.presentations.length > 0) {
+      pres = presentationId 
+        ? product.presentations.find(p => p.id === presentationId) || product.presentations[0]
+        : product.presentations[0];
+    } else {
+      pres = {
+        id: "unidad",
+        name: "Unidad",
+        units: 1,
+        price: product.sellPrice || 1.00
+      };
+    }
+
+    const cartKey = `${productId}_${pres.id}`;
+    const existingIndex = this.state.cart.findIndex(item => item.cartKey === cartKey);
+
     if (existingIndex >= 0) {
       this.state.cart[existingIndex].quantity += quantity;
     } else {
       this.state.cart.push({
+        cartKey,
         productId,
+        presentationId: pres.id,
+        presentationName: pres.name,
+        unitsPerItem: pres.units || 1,
+        price: pres.price,
         quantity
       });
     }
@@ -232,8 +250,8 @@ class Store {
     this.notify();
   }
 
-  updateCartQuantity(productId, delta) {
-    const index = this.state.cart.findIndex(item => item.productId === productId);
+  updateCartQuantity(cartKey, delta) {
+    const index = this.state.cart.findIndex(item => item.cartKey === cartKey || item.productId === cartKey);
     if (index === -1) return;
 
     this.state.cart[index].quantity += delta;
@@ -251,25 +269,30 @@ class Store {
 
   getCartDetailed() {
     let total = 0;
-    let totalItems = 0;
+    let totalUnits = 0;
+    let totalPackages = 0;
     let totalCost = 0;
 
     const items = this.state.cart.map(item => {
       const product = this.state.products.find(p => p.id === item.productId);
-      const sellPrice = product ? product.sellPrice : 0;
-      const costPrice = product ? product.costPrice : 0;
+      const sellPrice = item.price;
+      const unitCost = product ? (product.costPrice || 0) : 0;
+      const unitsPerItem = item.unitsPerItem || 1;
+      const totalUnitsForItem = unitsPerItem * item.quantity;
       const subtotal = sellPrice * item.quantity;
-      const subcost = costPrice * item.quantity;
+      const subcost = unitCost * totalUnitsForItem;
 
       total += subtotal;
       totalCost += subcost;
-      totalItems += item.quantity;
+      totalUnits += totalUnitsForItem;
+      totalPackages += item.quantity;
 
       return {
         ...item,
         product,
         sellPrice,
-        costPrice,
+        unitCost,
+        totalUnits: totalUnitsForItem,
         subtotal,
         profit: subtotal - subcost
       };
@@ -280,7 +303,9 @@ class Store {
       total,
       totalCost,
       totalProfit: total - totalCost,
-      totalItems
+      totalUnits, // Total actual beers/cans
+      totalPackages,
+      totalItems: totalPackages
     };
   }
 
@@ -302,19 +327,23 @@ class Store {
       sellerName: sellerObj.name,
       sellerAlias: sellerObj.alias,
       items: cartDetailed.items.map(it => ({
+        cartKey: it.cartKey,
         productId: it.productId,
-        productName: it.product.name,
+        productName: it.product ? it.product.name : 'Cerveza',
+        presentationId: it.presentationId,
+        presentationName: it.presentationName,
+        unitsPerItem: it.unitsPerItem,
         quantity: it.quantity,
+        totalUnits: it.totalUnits,
         sellPrice: it.sellPrice,
-        costPrice: it.costPrice,
         subtotal: it.subtotal,
         profit: it.profit
       })),
       total: Number(cartDetailed.total.toFixed(2)),
       totalCost: Number(cartDetailed.totalCost.toFixed(2)),
       profit: Number(cartDetailed.totalProfit.toFixed(2)),
-      totalUnits: cartDetailed.totalItems,
-      paymentMethod: isFiado ? 'fiado' : paymentMethod, // 'efectivo' | 'deuna' | 'transferencia' | 'fiado'
+      totalUnits: cartDetailed.totalUnits,
+      paymentMethod: isFiado ? 'fiado' : paymentMethod,
       originalPaymentType: paymentMethod,
       customerName: isFiado ? (customerName.trim() || 'Cliente sin nombre') : '',
       isPaid: !isFiado,
@@ -323,14 +352,15 @@ class Store {
       status: 'completed'
     };
 
-    // Decrement stock for sold products
+    // Decrement stock in units from single inventory
     const updatedProducts = [...this.state.products];
     for (const item of cartDetailed.items) {
       const prodIndex = updatedProducts.findIndex(p => p.id === item.productId);
       if (prodIndex >= 0) {
+        const unitsToSubtract = item.totalUnits || item.quantity;
         updatedProducts[prodIndex] = {
           ...updatedProducts[prodIndex],
-          stock: Math.max(0, updatedProducts[prodIndex].stock - item.quantity)
+          stock: Math.max(0, updatedProducts[prodIndex].stock - unitsToSubtract)
         };
       }
     }
@@ -357,14 +387,15 @@ class Store {
     const sale = this.state.sales[saleIndex];
     if (sale.status === 'cancelled') return false;
 
-    // Refund stock
+    // Refund stock units
     const updatedProducts = [...this.state.products];
     for (const item of sale.items) {
       const prodIndex = updatedProducts.findIndex(p => p.id === item.productId);
       if (prodIndex >= 0) {
+        const unitsToRefund = item.totalUnits || item.quantity;
         updatedProducts[prodIndex] = {
           ...updatedProducts[prodIndex],
-          stock: updatedProducts[prodIndex].stock + item.quantity
+          stock: updatedProducts[prodIndex].stock + unitsToRefund
         };
       }
     }
@@ -376,7 +407,6 @@ class Store {
     this.playWarningSound();
     this.notify();
 
-    // Sync to Firestore
     this.syncDocToFirestore('sales', sale);
     this.syncBatchProductsToFirestore(updatedProducts);
 
@@ -409,7 +439,6 @@ class Store {
     const cost = Number(costTotal) || 0;
     const unitCost = qty > 0 ? Number((cost / qty).toFixed(2)) : product.costPrice;
 
-    // Update product stock and optionally update last cost price
     const updatedProduct = {
       ...product,
       stock: product.stock + qty,
@@ -418,7 +447,6 @@ class Store {
 
     this.state.products[prodIndex] = updatedProduct;
 
-    // Add movement record
     const movement = {
       id: `mov_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
       timestamp: Date.now(),
@@ -483,47 +511,23 @@ class Store {
     return true;
   }
 
-  updateProductPrices(productId, { sellPrice, costPrice, minStockAlert }) {
+  updatePresentationPrice(productId, presentationId, newPrice) {
     const prodIndex = this.state.products.findIndex(p => p.id === productId);
     if (prodIndex === -1) return false;
 
-    const updated = {
-      ...this.state.products[prodIndex],
-      sellPrice: Number(sellPrice) || this.state.products[prodIndex].sellPrice,
-      costPrice: Number(costPrice) || this.state.products[prodIndex].costPrice,
-      minStockAlert: minStockAlert !== undefined ? Number(minStockAlert) : this.state.products[prodIndex].minStockAlert
-    };
+    const product = this.state.products[prodIndex];
+    if (!product.presentations) return false;
 
-    this.state.products[prodIndex] = updated;
+    const presIndex = product.presentations.findIndex(pr => pr.id === presentationId);
+    if (presIndex === -1) return false;
+
+    product.presentations[presIndex].price = Number(newPrice);
+    this.state.products[prodIndex] = { ...product };
+
     this.playTapSound();
     this.notify();
-
-    this.syncDocToFirestore('products', updated);
+    this.syncDocToFirestore('products', this.state.products[prodIndex]);
     return true;
-  }
-
-  addProduct(productData) {
-    const id = productData.id || `prod_${Date.now()}`;
-    const newProduct = {
-      id,
-      name: productData.name.trim(),
-      category: productData.category || 'General',
-      volume: productData.volume || '330 ml',
-      icon: productData.icon || '🍺',
-      color: productData.color || '#f59e0b',
-      sellPrice: Number(productData.sellPrice) || 1.50,
-      costPrice: Number(productData.costPrice) || 1.00,
-      stock: Number(productData.stock) || 0,
-      minStockAlert: Number(productData.minStockAlert) || 6,
-      jabaSize: Number(productData.jabaSize) || 12
-    };
-
-    this.state.products.push(newProduct);
-    this.playSaleSuccessSound();
-    this.notify();
-
-    this.syncDocToFirestore('products', newProduct);
-    return newProduct;
   }
 
   // --- Daily Metrics Calculations ---
@@ -552,19 +556,16 @@ class Store {
       netProfit += sale.profit;
       totalUnits += sale.totalUnits || 0;
 
-      // Seller breakdown
       if (sellerBreakdown[sale.sellerId]) {
         sellerBreakdown[sale.sellerId].totalSold += sale.total;
         sellerBreakdown[sale.sellerId].units += sale.totalUnits || 0;
         sellerBreakdown[sale.sellerId].count += 1;
       }
 
-      // Money breakdown
       if (sale.paymentMethod === 'fiado') {
         if (!sale.isPaid) {
           pendingFiados += sale.total;
         } else {
-          // If settled
           if (sale.paidMethod === 'deuna' || sale.paidMethod === 'transferencia') {
             deunaTransfer += sale.total;
           } else {
@@ -574,12 +575,11 @@ class Store {
       } else if (sale.paymentMethod === 'deuna' || sale.paymentMethod === 'transferencia') {
         deunaTransfer += sale.total;
       } else {
-        // Efectivo
         cashInDrawer += sale.total;
       }
     }
 
-    // Also check if any fiados from PREVIOUS days were paid TODAY in cash or deuna
+    // Previous fiados paid today
     const previousFiadosPaidToday = this.state.sales.filter(s => {
       if (s.dateStr === dateStr || s.status === 'cancelled' || s.paymentMethod !== 'fiado' || !s.isPaid || !s.paidAt) {
         return false;
@@ -615,7 +615,6 @@ class Store {
     const metrics = this.getDailyMetrics(dateStr);
     const lowStockProducts = this.state.products.filter(p => p.stock <= p.minStockAlert);
 
-    // Format date in Spanish (e.g., Sábado 15/11/2026)
     const [y, m, d] = dateStr.split('-');
     const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
     const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -670,7 +669,6 @@ class Store {
     this.notify();
 
     try {
-      // Dynamic import of Firebase SDK v10 via official CDN
       const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
       const { 
         getFirestore, 
@@ -685,20 +683,16 @@ class Store {
       this.firebaseApp = apps.length ? apps[0] : initializeApp(config);
       this.firestore = getFirestore(this.firebaseApp);
 
-      // Try enabling offline persistence
       try {
         await enableIndexedDbPersistence(this.firestore);
-      } catch (e) {
-        // Already enabled or tab collision
-      }
+      } catch (e) {}
 
-      // Cleanup existing listeners
       this.unsubscribeFirestore.forEach(unsub => unsub());
       this.unsubscribeFirestore = [];
 
       const storeId = this.state.storeId || 'tienda-principal';
 
-      // 1. Real-time listener for Products
+      // 1. Products listener
       const productsCol = collection(this.firestore, `stores/${storeId}/products`);
       const unsubProducts = onSnapshot(productsCol, (snapshot) => {
         if (!snapshot.empty) {
@@ -709,7 +703,6 @@ class Store {
           this.syncError = '';
           this.notify();
         } else {
-          // If Firestore is empty, upload initial local catalog
           this.syncBatchProductsToFirestore(this.state.products);
           this.syncStatus = 'online';
           this.notify();
@@ -722,7 +715,7 @@ class Store {
       });
       this.unsubscribeFirestore.push(unsubProducts);
 
-      // 2. Real-time listener for Sales
+      // 2. Sales listener
       const salesCol = collection(this.firestore, `stores/${storeId}/sales`);
       const unsubSales = onSnapshot(salesCol, (snapshot) => {
         const cloudSales = [];
@@ -740,7 +733,7 @@ class Store {
       });
       this.unsubscribeFirestore.push(unsubSales);
 
-      // 3. Real-time listener for Movements
+      // 3. Movements listener
       const movCol = collection(this.firestore, `stores/${storeId}/movements`);
       const unsubMov = onSnapshot(movCol, (snapshot) => {
         const cloudMov = [];
@@ -795,7 +788,7 @@ class Store {
   // Backup & Restore
   exportBackupJSON() {
     const backup = {
-      version: '1.0.0',
+      version: '2.0.0',
       exportedAt: new Date().toISOString(),
       storeId: this.state.storeId,
       products: this.state.products,
