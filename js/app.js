@@ -31,7 +31,7 @@ class AppController {
     window.addEventListener('hashchange', () => this.handleHashChange());
     if (window.location.hash) {
       const tab = window.location.hash.replace('#', '');
-      if (['vender', 'caja', 'stock', 'ajustes'].includes(tab)) {
+      if (['vender', 'caja', 'stock'].includes(tab)) {
         this.currentTab = tab;
       }
     }
@@ -47,7 +47,7 @@ class AppController {
 
   handleHashChange() {
     const tab = window.location.hash.replace('#', '');
-    if (['vender', 'caja', 'stock', 'ajustes'].includes(tab) && tab !== this.currentTab) {
+    if (['vender', 'caja', 'stock'].includes(tab) && tab !== this.currentTab) {
       this.switchTab(tab);
     }
   }
@@ -106,10 +106,6 @@ class AppController {
           mainContainer.innerHTML = this.renderStockTab();
           this.attachStockEvents();
           break;
-        case 'ajustes':
-          mainContainer.innerHTML = this.renderAjustesTab();
-          this.attachAjustesEvents();
-          break;
       }
     }
 
@@ -135,11 +131,37 @@ class AppController {
       syncBorder = 'border-amber-400/40';
     }
 
+    const soundOn = store.state.soundEnabled;
+
     headerSync.innerHTML = `
-      <div class="px-2.5 py-1 text-xs rounded-full border ${syncBorder} ${syncColor} flex items-center gap-1 shadow-sm">
-        ${syncText}
+      <div class="flex items-center gap-2">
+        <button 
+          id="btn-toggle-sound" 
+          class="w-8 h-8 rounded-full ${soundOn ? 'bg-slate-800 text-amber-400 border-slate-700 shadow-sm' : 'bg-slate-900/90 text-slate-500 border-slate-800'} border flex items-center justify-center text-sm touch-press transition-colors"
+          title="${soundOn ? 'Sonidos activados (toca para silenciar)' : 'Sonidos silenciados (toca para activar)'}"
+        >
+          ${soundOn ? '🔊' : '🔇'}
+        </button>
+        <div class="px-2.5 py-1 text-xs rounded-full border ${syncBorder} ${syncColor} flex items-center gap-1 shadow-sm font-black">
+          ${syncText}
+        </div>
       </div>
     `;
+
+    const btnToggleSound = document.getElementById('btn-toggle-sound');
+    if (btnToggleSound) {
+      btnToggleSound.onclick = () => {
+        store.state.soundEnabled = !store.state.soundEnabled;
+        localStorage.setItem('cb_sound', String(store.state.soundEnabled));
+        if (store.state.soundEnabled) {
+          store.playTapSound();
+          this.showToast('🔊 Sonidos activados');
+        } else {
+          this.showToast('🔇 Sonidos silenciados');
+        }
+        this.renderHeader();
+      };
+    }
   }
 
   // --- iOS Bottom Tab Bar ---
@@ -153,12 +175,11 @@ class AppController {
     const tabs = [
       { id: 'vender', label: 'Vender', icon: '🍺', badge: cartCount > 0 ? cartCount : null },
       { id: 'caja', label: 'Caja y Día', icon: '💰', badge: null },
-      { id: 'stock', label: 'Stock', icon: '📦', badge: null },
-      { id: 'ajustes', label: 'Ajustes', icon: '⚙️', badge: null }
+      { id: 'stock', label: 'Stock', icon: '📦', badge: null }
     ];
 
     tabBar.innerHTML = `
-      <div class="grid grid-cols-4 max-w-md mx-auto h-16 items-center px-2">
+      <div class="grid grid-cols-3 max-w-md mx-auto h-16 items-center px-4">
         ${tabs.map(tab => {
           const isActive = this.currentTab === tab.id;
           return `
@@ -1014,6 +1035,7 @@ class AppController {
     const metrics = store.getDailyMetrics();
     const todayStr = store.getTodayDateString();
     const isToday = store.state.selectedDate === todayStr;
+    const summaryText = store.generateWhatsAppSummary(store.state.selectedDate);
 
     return `
       <div class="space-y-4">
@@ -1101,6 +1123,39 @@ class AppController {
                 ${store.formatCurrency(metrics.deunaTransfer)}
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Reporte Diario para WhatsApp (Listo para enviar a Manta) -->
+        <div class="ios-card-glass p-4 rounded-2xl border border-emerald-500/40 space-y-3 glow-emerald">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs uppercase font-black tracking-wider text-emerald-400 flex items-center gap-1.5">
+              <span>📲</span> REPORTE DEL DÍA PARA WHATSAPP
+            </h3>
+            <span class="text-[10px] text-slate-400 font-semibold">Listo para enviar a Manta</span>
+          </div>
+
+          <p class="text-xs text-slate-300">
+            Con un solo toque copia o envía el resumen del día con el dinero en cajón, transferencias y cervezas vendidas.
+          </p>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button 
+              id="btn-copy-whatsapp"
+              class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs py-3.5 px-3 rounded-xl shadow-lg flex items-center justify-center gap-2 touch-press glow-emerald"
+            >
+              <span>📋</span> COPIAR REPORTE
+            </button>
+            <button 
+              id="btn-send-whatsapp"
+              class="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-3.5 px-3 rounded-xl border border-slate-700 flex items-center justify-center gap-2 touch-press"
+            >
+              <span>💬</span> ABRIR WHATSAPP
+            </button>
+          </div>
+
+          <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-300 whitespace-pre-wrap max-h-44 overflow-y-auto no-scrollbar">
+${summaryText}
           </div>
         </div>
 
@@ -1234,6 +1289,38 @@ class AppController {
         store.state.selectedDate = e.target.value;
         store.playTapSound();
         this.render();
+      };
+    }
+
+    // WhatsApp Report Actions
+    const btnCopy = document.getElementById('btn-copy-whatsapp');
+    if (btnCopy) {
+      btnCopy.onclick = async () => {
+        const text = store.generateWhatsAppSummary(store.state.selectedDate);
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          this.showToast('¡Reporte copiado! Pégalo en WhatsApp');
+        } catch (e) {
+          alert('No se pudo copiar automáticamente. Por favor cópialo desde el recuadro.');
+        }
+      };
+    }
+
+    const btnSend = document.getElementById('btn-send-whatsapp');
+    if (btnSend) {
+      btnSend.onclick = () => {
+        const text = store.generateWhatsAppSummary(store.state.selectedDate);
+        const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
       };
     }
 
@@ -1712,203 +1799,6 @@ class AppController {
         this.showToast('Stock ajustado');
         closeModal();
         this.render();
-      };
-    }
-  }
-
-  // ========================================================
-  // TAB 4: AJUSTES (Sin recargo de Firebase, limpio y rápido)
-  // ========================================================
-  renderAjustesTab() {
-    const summaryText = store.generateWhatsAppSummary();
-
-    return `
-      <div class="space-y-4">
-        <!-- Status Pill: Firebase ya configurado internamente -->
-        <div class="ios-card-glass p-3.5 rounded-2xl border border-emerald-500/30 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl">
-              🟢
-            </div>
-            <div>
-              <div class="text-xs font-black text-white">Sincronización en Tiempo Real</div>
-              <div class="text-[11px] text-emerald-400 font-bold">Conectado a Nube Manta (Firebase)</div>
-            </div>
-          </div>
-          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full font-bold">Activo</span>
-        </div>
-
-        <!-- WhatsApp Report Section (Primary Tool for Manta) -->
-        <div class="ios-card-glass p-4 rounded-2xl border border-emerald-500/40 space-y-3 glow-emerald">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs uppercase font-black tracking-wider text-emerald-400 flex items-center gap-1.5">
-              <span>📲</span> REPORTE DIARIO PARA WHATSAPP
-            </h3>
-            <span class="text-[10px] text-slate-400 font-semibold">Listo para enviar a Manta</span>
-          </div>
-
-          <p class="text-xs text-slate-300">
-            Con un solo toque copia el resumen diario con el dinero exacto en cajón, transferencias Deuna y unidades vendidas.
-          </p>
-
-          <div class="grid grid-cols-2 gap-2 pt-1">
-            <button 
-              id="btn-copy-whatsapp"
-              class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs py-3.5 px-3 rounded-xl shadow-lg flex items-center justify-center gap-2 touch-press glow-emerald"
-            >
-              <span>📋</span> COPIAR REPORTE
-            </button>
-            <button 
-              id="btn-send-whatsapp"
-              class="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-3.5 px-3 rounded-xl border border-slate-700 flex items-center justify-center gap-2 touch-press"
-            >
-              <span>💬</span> ABRIR WHATSAPP
-            </button>
-          </div>
-
-          <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-300 whitespace-pre-wrap max-h-44 overflow-y-auto no-scrollbar">
-${summaryText}
-          </div>
-        </div>
-
-        <!-- Backup & Restore -->
-        <div class="ios-card-glass p-4 rounded-2xl border border-slate-800 space-y-3">
-          <h3 class="text-xs uppercase font-black tracking-wider text-slate-300 flex items-center gap-1.5">
-            <span>💾</span> COPIAS DE SEGURIDAD
-          </h3>
-
-          <div class="grid grid-cols-2 gap-2">
-            <button 
-              id="btn-export-backup"
-              class="p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-slate-200 hover:bg-slate-800 touch-press"
-            >
-              📥 Descargar Backup JSON
-            </button>
-            <label class="p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-slate-200 hover:bg-slate-800 touch-press text-center cursor-pointer">
-              📤 Cargar Backup JSON
-              <input type="file" id="input-import-backup" accept=".json" class="hidden" />
-            </label>
-          </div>
-
-          <button 
-            id="btn-reset-demo"
-            class="w-full p-2 text-[11px] text-red-400 hover:text-red-300 font-semibold text-center"
-          >
-            Restablecer inventario oficial
-          </button>
-        </div>
-
-        <!-- Sound & Vibration Toggle -->
-        <div class="ios-card-glass p-3.5 rounded-2xl border border-slate-800 flex items-center justify-between">
-          <div>
-            <div class="text-xs font-bold text-white">Efectos de Sonido y Vibración</div>
-            <div class="text-[10px] text-slate-400">Timbre de caja registradora al cobrar</div>
-          </div>
-          <input 
-            type="checkbox" 
-            id="toggle-sound" 
-            ${store.state.soundEnabled ? 'checked' : ''} 
-            class="w-5 h-5 accent-amber-500 rounded cursor-pointer"
-          />
-        </div>
-
-        <!-- iOS Guide -->
-        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-2 text-xs text-slate-400">
-          <div class="font-bold text-white text-sm flex items-center gap-1.5">
-            <span>📱</span> CÓMO INSTALAR EN IPHONE:
-          </div>
-          <ol class="list-decimal list-inside space-y-1 pl-1">
-            <li>Abre este enlace en el navegador <strong>Safari</strong> de tu iPhone.</li>
-            <li>Toca el botón <strong>Compartir</strong> (ícono cuadrado con flecha hacia arriba ⎋).</li>
-            <li>Selecciona <strong>"Agregar a pantalla de inicio"</strong>.</li>
-            <li>Se ejecutará en pantalla completa como app nativa.</li>
-          </ol>
-        </div>
-      </div>
-    `;
-  }
-
-  attachAjustesEvents() {
-    const btnCopy = document.getElementById('btn-copy-whatsapp');
-    if (btnCopy) {
-      btnCopy.onclick = async () => {
-        const text = store.generateWhatsAppSummary();
-        try {
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(text);
-          } else {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-          }
-          this.showToast('¡Reporte copiado! Pégalo en WhatsApp');
-        } catch (e) {
-          alert('No se pudo copiar automáticamente. Por favor cópialo desde el recuadro.');
-        }
-      };
-    }
-
-    const btnSend = document.getElementById('btn-send-whatsapp');
-    if (btnSend) {
-      btnSend.onclick = () => {
-        const text = store.generateWhatsAppSummary();
-        const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-        window.open(url, '_blank');
-      };
-    }
-
-    const btnExport = document.getElementById('btn-export-backup');
-    if (btnExport) {
-      btnExport.onclick = () => {
-        const json = store.exportBackupJSON();
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `control-birras-backup-${store.getTodayDateString()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-      };
-    }
-
-    const inputImport = document.getElementById('input-import-backup');
-    if (inputImport) {
-      inputImport.onchange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const ok = store.importBackupJSON(event.target.result);
-          if (ok) {
-            this.showToast('Respaldo restaurado correctamente');
-            this.render();
-          } else {
-            alert('Error al leer el archivo de respaldo.');
-          }
-        };
-        reader.readAsText(file);
-      };
-    }
-
-    const btnReset = document.getElementById('btn-reset-demo');
-    if (btnReset) {
-      btnReset.onclick = () => {
-        if (confirm('¿Restablecer el inventario a las existencias oficiales?')) {
-          store.resetDemoData();
-          this.showToast('Inventario restablecido');
-          this.render();
-        }
-      };
-    }
-
-    const toggleSound = document.getElementById('toggle-sound');
-    if (toggleSound) {
-      toggleSound.onchange = (e) => {
-        store.state.soundEnabled = e.target.checked;
-        localStorage.setItem('cb_sound', String(e.target.checked));
       };
     }
   }
