@@ -46,6 +46,9 @@ html, body {
 .pt-safe {
   padding-top: calc(var(--sat) + 0.5rem);
 }
+.pt-header-safe {
+  padding-top: calc(var(--sat) + 5rem);
+}
 .pb-safe {
   padding-bottom: calc(var(--sab) + 5rem);
 }
@@ -76,13 +79,12 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Touch feedback animation */
+/* Touch feedback animation (No opacity fading to prevent blinking) */
 .touch-press {
   transition: transform 0.08s ease;
 }
 .touch-press:active {
   transform: scale(0.97);
-  
 }
 
 /* Glowing gold badge */
