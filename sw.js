@@ -1,4 +1,4 @@
-const CACHE_NAME = 'control-birras-v1.0.0';
+const CACHE_NAME = 'control-birras-v1.0.1';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -38,11 +38,9 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Pass through non-GET and firestore / external API calls
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
-  // Firestore and Firebase API shouldn't be handled by static service worker cache
   if (url.hostname.includes('firestore.googleapis.com') || url.hostname.includes('firebaseio.com')) {
     return;
   }
@@ -50,14 +48,13 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return cached and update in background (stale-while-revalidate for local assets)
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, networkResponse);
             });
           }
-        }).catch(() => {/* offline fallback */});
+        }).catch(() => {});
         return cachedResponse;
       }
       return fetch(event.request).then((networkResponse) => {
