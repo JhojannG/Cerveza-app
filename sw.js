@@ -1,4 +1,4 @@
-const CACHE_NAME = 'control-birras-v1.0.1';
+const CACHE_NAME = 'control-birras-v1.0.2';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -10,7 +10,13 @@ const STATIC_ASSETS = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/apple-touch-icon.png',
-  './icons/icon.svg'
+  './icons/icon.svg',
+  './img/pilsener-lata.jpg',
+  './img/amstel-lata.jpg',
+  './img/club-verde-330.png',
+  './img/corona-330.jpg',
+  './img/heineken-250.png',
+  './img/club-verde-550.jpg'
 ];
 
 self.addEventListener('install', (event) => {
