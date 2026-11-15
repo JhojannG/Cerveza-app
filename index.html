@@ -16,9 +16,9 @@
   
   <!-- Icons & Manifest -->
   <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
-  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" onerror="this.onerror=null;this.href='./apple-touch-icon.png';">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" onerror="this.onerror=null;this.href='./icon-192.png';">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg" onerror="this.onerror=null;this.href='./icon.svg';">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -41,8 +41,8 @@
     }
   </script>
 
-  <!-- Custom iOS Stylesheet -->
-  <link rel="stylesheet" href="./css/app.css">
+  <!-- Custom iOS Stylesheet with Fallback -->
+  <link rel="stylesheet" href="./css/app.css" onerror="this.onerror=null;this.href='./app.css';">
 </head>
 <body class="bg-[#090d16] text-slate-100 min-h-screen flex flex-col font-sans select-none antialiased">
 
@@ -90,7 +90,9 @@
   <!-- Cart Drawer Container -->
   <div id="cart-drawer-container"></div>
 
-  <!-- Application Entry Point (ES Module) -->
-  <script type="module" src="./js/app.js"></script>
+  <!-- Application Entry Point with Dual Path Resolution -->
+  <script type="module">
+    import('./js/app.js').catch(() => import('./app.js'));
+  </script>
 </body>
 </html>
