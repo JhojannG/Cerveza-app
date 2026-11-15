@@ -89,26 +89,29 @@ class AppController {
     this.renderHeader();
     this.renderTabBar();
 
+    const modalSheet = document.getElementById('presentation-modal-sheet');
     const mainContainer = document.getElementById('tab-content');
-    if (!mainContainer) return;
 
-    switch (this.currentTab) {
-      case 'vender':
-        mainContainer.innerHTML = this.renderVenderTab();
-        this.attachVenderEvents();
-        break;
-      case 'caja':
-        mainContainer.innerHTML = this.renderCajaTab();
-        this.attachCajaEvents();
-        break;
-      case 'stock':
-        mainContainer.innerHTML = this.renderStockTab();
-        this.attachStockEvents();
-        break;
-      case 'ajustes':
-        mainContainer.innerHTML = this.renderAjustesTab();
-        this.attachAjustesEvents();
-        break;
+    // Only rebuild tab content if modal and cart drawer are NOT actively open
+    if (!this.cartDrawerOpen && !modalSheet && mainContainer) {
+      switch (this.currentTab) {
+        case 'vender':
+          mainContainer.innerHTML = this.renderVenderTab();
+          this.attachVenderEvents();
+          break;
+        case 'caja':
+          mainContainer.innerHTML = this.renderCajaTab();
+          this.attachCajaEvents();
+          break;
+        case 'stock':
+          mainContainer.innerHTML = this.renderStockTab();
+          this.attachStockEvents();
+          break;
+        case 'ajustes':
+          mainContainer.innerHTML = this.renderAjustesTab();
+          this.attachAjustesEvents();
+          break;
+      }
     }
 
     this.renderCartFloatingBar();
@@ -342,7 +345,7 @@ class AppController {
     });
   }
 
-  // --- Modal: Selector de Presentación y Cantidad con Flechas e Input Editable ---
+  // --- Modal: Selector de Presentación y Cantidad con Flechas e Input Editable (Zero-Flicker) ---
   showPresentationModal(productId) {
     const product = store.state.products.find(p => p.id === productId);
     if (!product) return;
@@ -358,229 +361,287 @@ class AppController {
     let selectedPresId = presentations.some(p => p.id === 'unidad') ? 'unidad' : presentations[0].id;
     let quantity = 1;
 
-    const renderModalContent = () => {
-      const activePres = presentations.find(p => p.id === selectedPresId) || presentations[0];
-      const unitsPerPack = activePres.units || 1;
-      const totalUnitsToDeduct = unitsPerPack * quantity;
-      const totalPrice = activePres.price * quantity;
-      const hasEnoughStock = product.stock >= totalUnitsToDeduct;
+    const activePres = presentations.find(p => p.id === selectedPresId) || presentations[0];
+    const unitsPerPack = activePres.units || 1;
+    const totalUnitsToDeduct = unitsPerPack * quantity;
+    const totalPrice = activePres.price * quantity;
+    const hasEnoughStock = product.stock >= totalUnitsToDeduct;
 
-      modalContainer.innerHTML = `
-        <!-- Backdrop -->
-        <div id="presentation-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50"></div>
+    // Render modal structure EXACTLY ONCE into DOM
+    modalContainer.innerHTML = `
+      <!-- Backdrop -->
+      <div id="presentation-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50"></div>
 
-        <!-- Presentation Sheet -->
-        <div class="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto ios-blur rounded-t-3xl border-t-2 border-slate-700 p-4 pb-safe-tab shadow-2xl drawer-enter max-h-[92vh] flex flex-col">
-          <!-- Header (BIGGER IMAGE & FONTS) -->
-          <div class="flex items-center justify-between pb-3.5 border-b border-slate-800">
-            <div class="flex items-center gap-3.5">
-              <div class="w-20 h-20 bg-slate-950/80 rounded-2xl overflow-hidden flex items-center justify-center p-2 border-2 border-slate-800 shadow-inner shrink-0">
-                ${product.image ? `
-                  <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain filter drop-shadow-md" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
-                  <span class="text-4xl hidden">${product.icon || '🍺'}</span>
-                ` : `
-                  <span class="text-4xl">${product.icon || '🍺'}</span>
-                `}
-              </div>
-              <div>
-                <h3 class="font-black text-white text-lg sm:text-xl leading-tight">${product.name}</h3>
-                <p class="text-xs sm:text-sm text-slate-300 font-semibold mt-0.5">
-                  ${product.volume} • Stock actual: <span class="text-emerald-400 font-black text-sm">${product.stock} un.</span>
-                </p>
-              </div>
+      <!-- Presentation Sheet -->
+      <div id="presentation-modal-sheet" class="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto ios-blur rounded-t-3xl border-t-2 border-slate-700 p-4 pb-safe-tab shadow-2xl drawer-enter max-h-[92vh] flex flex-col">
+        <!-- Header (BIGGER IMAGE & FONTS) -->
+        <div class="flex items-center justify-between pb-3.5 border-b border-slate-800">
+          <div class="flex items-center gap-3.5">
+            <div class="w-20 h-20 bg-slate-950/80 rounded-2xl overflow-hidden flex items-center justify-center p-2 border-2 border-slate-800 shadow-inner shrink-0">
+              ${product.image ? `
+                <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain filter drop-shadow-md" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
+                <span class="text-4xl hidden">${product.icon || '🍺'}</span>
+              ` : `
+                <span class="text-4xl">${product.icon || '🍺'}</span>
+              `}
             </div>
-            <button id="btn-close-presentation" class="text-slate-300 hover:text-white w-10 h-10 rounded-full bg-slate-800 text-base font-bold flex items-center justify-center touch-press">
-              ✕
-            </button>
+            <div>
+              <h3 class="font-black text-white text-lg sm:text-xl leading-tight">${product.name}</h3>
+              <p class="text-xs sm:text-sm text-slate-300 font-semibold mt-0.5">
+                ${product.volume} • Stock actual: <span class="text-emerald-400 font-black text-sm">${product.stock} un.</span>
+              </p>
+            </div>
           </div>
+          <button id="btn-close-presentation" class="text-slate-300 hover:text-white w-10 h-10 rounded-full bg-slate-800 text-base font-bold flex items-center justify-center touch-press">
+            ✕
+          </button>
+        </div>
 
-          <!-- Body -->
-          <div class="py-3.5 space-y-3.5 overflow-y-auto no-scrollbar">
-            <!-- Presentation Selector (Chips) -->
-            ${presentations.length > 1 ? `
-              <div>
-                <div class="text-xs font-black uppercase tracking-wider text-amber-400 mb-2 px-1">
-                  SELECCIONA LA PRESENTACIÓN:
-                </div>
-                <div class="grid grid-cols-${presentations.length <= 3 ? presentations.length : 2} gap-2">
-                  ${presentations.map(pres => {
-                    const isSelected = pres.id === selectedPresId;
-                    return `
-                      <button 
-                        data-pres-select="${pres.id}"
-                        class="pres-chip py-3 px-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 touch-press transition-all ${
-                          isSelected 
-                            ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-lg glow-gold font-black scale-[1.02]' 
-                            : 'bg-slate-900/90 text-slate-300 border-slate-800 font-bold hover:bg-slate-800'
-                        }"
-                      >
-                        <span class="text-xl">${pres.icon || '🍺'}</span>
-                        <span class="text-xs font-black uppercase leading-tight">${pres.name}</span>
-                        <span class="text-sm font-black ${isSelected ? 'text-slate-950' : 'text-amber-400'}">
-                          ${store.formatCurrency(pres.price)}
-                        </span>
-                        <span class="text-[10px] ${isSelected ? 'text-slate-900 font-bold' : 'text-slate-400'}">
-                          ${pres.units} ${pres.units === 1 ? 'un.' : 'unidades'}
-                        </span>
-                      </button>
-                    `;
-                  }).join('')}
-                </div>
+        <!-- Body -->
+        <div class="py-3.5 space-y-3.5 overflow-y-auto no-scrollbar">
+          <!-- Presentation Selector (Chips) -->
+          ${presentations.length > 1 ? `
+            <div>
+              <div class="text-xs font-black uppercase tracking-wider text-amber-400 mb-2 px-1">
+                SELECCIONA LA PRESENTACIÓN:
               </div>
-            ` : ''}
-
-            <!-- Quantity Stepper & Direct Typing Input -->
-            <div class="bg-slate-950/90 rounded-2xl p-4 border border-slate-800 space-y-3">
-              <div class="flex items-center justify-between px-1">
-                <span class="text-xs uppercase font-black text-amber-400 tracking-wider">
-                  CANTIDAD A SUMAR:
-                </span>
-                <span class="text-xs font-bold ${hasEnoughStock ? 'text-emerald-400' : 'text-red-400 font-black'}">
-                  Descuenta: <strong>${totalUnitsToDeduct} un.</strong> de stock
-                </span>
-              </div>
-
-              <!-- Main Input and +/- Arrow Buttons -->
-              <div class="flex items-center justify-center gap-3 pt-1">
-                <button 
-                  id="btn-qty-minus" 
-                  class="w-14 h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white text-2xl font-black flex items-center justify-center border border-slate-700 shadow-md touch-press"
-                  title="Disminuir"
-                >
-                  ▼
-                </button>
-
-                <div class="flex flex-col items-center">
-                  <input 
-                    type="number" 
-                    id="input-qty-number" 
-                    value="${quantity}" 
-                    min="1" 
-                    max="999"
-                    class="w-28 h-14 bg-slate-900 border-2 border-amber-500 rounded-2xl text-amber-400 text-3xl font-black text-center focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-inner select-all"
-                  />
-                  <span class="text-[10px] text-slate-400 font-medium mt-1">Escribe o usa flechas</span>
-                </div>
-
-                <button 
-                  id="btn-qty-plus" 
-                  class="w-14 h-14 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 text-2xl font-black flex items-center justify-center shadow-lg glow-gold touch-press"
-                  title="Aumentar"
-                >
-                  ▲
-                </button>
-              </div>
-
-              <!-- Quick Quantity Chips (+1, +2, +3, +5, +6, +12, +24) -->
-              <div class="flex items-center justify-center gap-1.5 pt-1 flex-wrap">
-                <span class="text-[10px] text-slate-400 font-bold mr-1">Rápido:</span>
-                ${[1, 2, 3, 5, 6, 12, 24].map(q => `
-                  <button 
-                    data-quick-add="${q}"
-                    class="btn-quick-chip py-1.5 px-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-black border border-slate-800 touch-press"
-                  >
-                    +${q}
-                  </button>
-                `).join('')}
+              <div class="grid grid-cols-${presentations.length <= 3 ? presentations.length : 2} gap-2">
+                ${presentations.map(pres => {
+                  const isSelected = pres.id === selectedPresId;
+                  return `
+                    <button 
+                      data-pres-select="${pres.id}"
+                      class="pres-chip py-3 px-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 touch-press ${
+                        isSelected 
+                          ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-lg glow-gold font-black scale-[1.02]' 
+                          : 'bg-slate-900/90 text-slate-300 border-slate-800 font-bold hover:bg-slate-800'
+                      }"
+                    >
+                      <span class="text-xl">${pres.icon || '🍺'}</span>
+                      <span class="text-xs font-black uppercase leading-tight">${pres.name}</span>
+                      <span class="pres-chip-price text-sm font-black ${isSelected ? 'text-slate-950' : 'text-amber-400'}">
+                        ${store.formatCurrency(pres.price)}
+                      </span>
+                      <span class="pres-chip-units text-[10px] ${isSelected ? 'text-slate-900 font-bold' : 'text-slate-400'}">
+                        ${pres.units} ${pres.units === 1 ? 'un.' : 'unidades'}
+                      </span>
+                    </button>
+                  `;
+                }).join('')}
               </div>
             </div>
+          ` : ''}
 
-            <!-- Total Price Display & Giant Add Button -->
-            <div class="pt-1 space-y-2">
-              <div class="flex items-baseline justify-between px-2">
-                <span class="text-xs uppercase font-extrabold text-slate-400">Total a sumar:</span>
-                <div class="text-right">
-                  <span class="text-2xl font-black text-amber-400">${store.formatCurrency(totalPrice)}</span>
-                  <span class="text-xs text-slate-400 ml-1">(${quantity} × ${store.formatCurrency(activePres.price)})</span>
-                </div>
+          <!-- Quantity Stepper & Direct Typing Input -->
+          <div class="bg-slate-950/90 rounded-2xl p-4 border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between px-1">
+              <span class="text-xs uppercase font-black text-amber-400 tracking-wider">
+                CANTIDAD A SUMAR:
+              </span>
+              <span id="pres-modal-deduct-stock" class="text-xs font-bold ${hasEnoughStock ? 'text-emerald-400' : 'text-red-400 font-black'}">
+                Descuenta: <strong>${totalUnitsToDeduct} un.</strong> de stock
+              </span>
+            </div>
+
+            <!-- Main Input and +/- Arrow Buttons -->
+            <div class="flex items-center justify-center gap-3 pt-1">
+              <button 
+                id="btn-qty-minus" 
+                class="w-14 h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white text-2xl font-black flex items-center justify-center border border-slate-700 shadow-md touch-press"
+                title="Disminuir"
+              >
+                ▼
+              </button>
+
+              <div class="flex flex-col items-center">
+                <input 
+                  type="number" 
+                  id="input-qty-number" 
+                  value="${quantity}" 
+                  min="1" 
+                  max="999"
+                  class="w-28 h-14 bg-slate-900 border-2 border-amber-500 rounded-2xl text-amber-400 text-3xl font-black text-center focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-inner select-all"
+                />
+                <span class="text-[10px] text-slate-400 font-medium mt-1">Escribe o usa flechas</span>
               </div>
 
               <button 
-                id="btn-add-to-cart-submit"
-                class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 text-slate-950 font-black text-base sm:text-lg shadow-xl glow-emerald flex items-center justify-center gap-2 touch-press"
+                id="btn-qty-plus" 
+                class="w-14 h-14 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 text-2xl font-black flex items-center justify-center shadow-lg glow-gold touch-press"
+                title="Aumentar"
               >
-                <span>🛒</span>
-                <span>AGREGAR AL CARRITO • ${store.formatCurrency(totalPrice)}</span>
+                ▲
               </button>
             </div>
+
+            <!-- Quick Quantity Chips (+1, +2, +3, +5, +6, +12, +24) -->
+            <div class="flex items-center justify-center gap-1.5 pt-1 flex-wrap">
+              <span class="text-[10px] text-slate-400 font-bold mr-1">Rápido:</span>
+              ${[1, 2, 3, 5, 6, 12, 24].map(q => `
+                <button 
+                  data-quick-add="${q}"
+                  class="btn-quick-chip py-1.5 px-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-black border border-slate-800 touch-press"
+                >
+                  +${q}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Total Price Display & Giant Add Button -->
+          <div class="pt-1 space-y-2">
+            <div class="flex items-baseline justify-between px-2">
+              <span class="text-xs uppercase font-extrabold text-slate-400">Total a sumar:</span>
+              <div class="text-right">
+                <span id="pres-modal-total-price" class="text-2xl font-black text-amber-400">${store.formatCurrency(totalPrice)}</span>
+                <span id="pres-modal-formula" class="text-xs text-slate-400 ml-1">(${quantity} × ${store.formatCurrency(activePres.price)})</span>
+              </div>
+            </div>
+
+            <button 
+              id="btn-add-to-cart-submit"
+              class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 text-slate-950 font-black text-base sm:text-lg shadow-xl glow-emerald flex items-center justify-center gap-2 touch-press"
+            >
+              <span>🛒</span>
+              <span id="pres-modal-submit-text">AGREGAR AL CARRITO • ${store.formatCurrency(totalPrice)}</span>
+            </button>
           </div>
         </div>
-      `;
+      </div>
+    `;
 
-      // Attach events for this modal state
-      const backdrop = document.getElementById('presentation-backdrop');
-      const btnClose = document.getElementById('btn-close-presentation');
-      if (backdrop) backdrop.onclick = () => { modalContainer.innerHTML = ''; };
-      if (btnClose) btnClose.onclick = () => { modalContainer.innerHTML = ''; };
+    // Remove animation class after entrance so further updates never trigger animation
+    setTimeout(() => {
+      const sheet = document.getElementById('presentation-modal-sheet');
+      if (sheet) sheet.classList.remove('drawer-enter');
+    }, 280);
 
-      // Presentation chips
+    // Dynamic In-Place Synchronizer (Zero-Flicker, Zero DOM replacement)
+    const updateModalValues = () => {
+      const currentPres = presentations.find(p => p.id === selectedPresId) || presentations[0];
+      const curUnitsPerPack = currentPres.units || 1;
+      const curTotalUnits = curUnitsPerPack * quantity;
+      const curTotalPrice = currentPres.price * quantity;
+      const curHasEnough = product.stock >= curTotalUnits;
+
+      const inputQtyEl = document.getElementById('input-qty-number');
+      if (inputQtyEl && parseInt(inputQtyEl.value, 10) !== quantity) {
+        inputQtyEl.value = quantity;
+      }
+
+      const deductEl = document.getElementById('pres-modal-deduct-stock');
+      if (deductEl) {
+        deductEl.className = `text-xs font-bold ${curHasEnough ? 'text-emerald-400' : 'text-red-400 font-black'}`;
+        deductEl.innerHTML = `Descuenta: <strong>${curTotalUnits} un.</strong> de stock`;
+      }
+
+      const totalEl = document.getElementById('pres-modal-total-price');
+      if (totalEl) totalEl.innerText = store.formatCurrency(curTotalPrice);
+
+      const formulaEl = document.getElementById('pres-modal-formula');
+      if (formulaEl) formulaEl.innerText = `(${quantity} × ${store.formatCurrency(currentPres.price)})`;
+
+      const submitTextEl = document.getElementById('pres-modal-submit-text');
+      if (submitTextEl) submitTextEl.innerText = `AGREGAR AL CARRITO • ${store.formatCurrency(curTotalPrice)}`;
+
+      // Update chips highlight
       modalContainer.querySelectorAll('button[data-pres-select]').forEach(btn => {
-        btn.onclick = () => {
-          selectedPresId = btn.getAttribute('data-pres-select');
-          store.playTapSound();
-          renderModalContent();
-        };
+        const isSel = btn.getAttribute('data-pres-select') === selectedPresId;
+        const priceSpan = btn.querySelector('.pres-chip-price');
+        const unitsSpan = btn.querySelector('.pres-chip-units');
+
+        if (isSel) {
+          btn.className = "pres-chip py-3 px-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 touch-press bg-amber-500 text-slate-950 border-amber-300 shadow-lg glow-gold font-black scale-[1.02]";
+          if (priceSpan) priceSpan.className = "pres-chip-price text-sm font-black text-slate-950";
+          if (unitsSpan) unitsSpan.className = "pres-chip-units text-[10px] text-slate-900 font-bold";
+        } else {
+          btn.className = "pres-chip py-3 px-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 touch-press bg-slate-900/90 text-slate-300 border-slate-800 font-bold hover:bg-slate-800";
+          if (priceSpan) priceSpan.className = "pres-chip-price text-sm font-black text-amber-400";
+          if (unitsSpan) unitsSpan.className = "pres-chip-units text-[10px] text-slate-400";
+        }
       });
-
-      // Quantity controls
-      const btnMinus = document.getElementById('btn-qty-minus');
-      const btnPlus = document.getElementById('btn-qty-plus');
-      const inputQty = document.getElementById('input-qty-number');
-
-      if (btnMinus) {
-        btnMinus.onclick = () => {
-          if (quantity > 1) {
-            quantity -= 1;
-            store.playTapSound();
-            renderModalContent();
-          }
-        };
-      }
-
-      if (btnPlus) {
-        btnPlus.onclick = () => {
-          quantity += 1;
-          store.playTapSound();
-          renderModalContent();
-        };
-      }
-
-      if (inputQty) {
-        inputQty.onchange = (e) => {
-          let val = parseInt(e.target.value, 10);
-          if (isNaN(val) || val < 1) val = 1;
-          quantity = val;
-          renderModalContent();
-        };
-        inputQty.onkeyup = (e) => {
-          if (e.key === 'Enter') {
-            document.getElementById('btn-add-to-cart-submit')?.click();
-          }
-        };
-      }
-
-      // Quick chips
-      modalContainer.querySelectorAll('button[data-quick-add]').forEach(btn => {
-        btn.onclick = () => {
-          const addVal = parseInt(btn.getAttribute('data-quick-add'), 10) || 1;
-          quantity += addVal;
-          store.playTapSound();
-          renderModalContent();
-        };
-      });
-
-      // Submit
-      const btnSubmit = document.getElementById('btn-add-to-cart-submit');
-      if (btnSubmit) {
-        btnSubmit.onclick = () => {
-          store.addToCart(productId, selectedPresId, quantity);
-          this.showToast(`+${quantity} ${activePres.name} agregada(s)`);
-          modalContainer.innerHTML = '';
-        };
-      }
     };
 
-    renderModalContent();
+    // Close events
+    const backdrop = document.getElementById('presentation-backdrop');
+    const btnClose = document.getElementById('btn-close-presentation');
+    const closeModal = () => { modalContainer.innerHTML = ''; };
+    if (backdrop) backdrop.onclick = closeModal;
+    if (btnClose) btnClose.onclick = closeModal;
+
+    // Presentation Chips click
+    modalContainer.querySelectorAll('button[data-pres-select]').forEach(btn => {
+      btn.onclick = () => {
+        selectedPresId = btn.getAttribute('data-pres-select');
+        store.playTapSound();
+        updateModalValues();
+      };
+    });
+
+    // Quantity buttons
+    const btnMinus = document.getElementById('btn-qty-minus');
+    const btnPlus = document.getElementById('btn-qty-plus');
+    const inputQty = document.getElementById('input-qty-number');
+
+    if (btnMinus) {
+      btnMinus.onclick = () => {
+        if (quantity > 1) {
+          quantity -= 1;
+          store.playTapSound();
+          updateModalValues();
+        }
+      };
+    }
+
+    if (btnPlus) {
+      btnPlus.onclick = () => {
+        quantity += 1;
+        store.playTapSound();
+        updateModalValues();
+      };
+    }
+
+    if (inputQty) {
+      inputQty.oninput = (e) => {
+        let val = parseInt(e.target.value, 10);
+        if (!isNaN(val) && val >= 1) {
+          quantity = val;
+          updateModalValues();
+        }
+      };
+      inputQty.onchange = (e) => {
+        let val = parseInt(e.target.value, 10);
+        if (isNaN(val) || val < 1) val = 1;
+        quantity = val;
+        updateModalValues();
+      };
+      inputQty.onkeyup = (e) => {
+        if (e.key === 'Enter') {
+          document.getElementById('btn-add-to-cart-submit')?.click();
+        }
+      };
+    }
+
+    // Quick chips
+    modalContainer.querySelectorAll('button[data-quick-add]').forEach(btn => {
+      btn.onclick = () => {
+        const addVal = parseInt(btn.getAttribute('data-quick-add'), 10) || 1;
+        quantity += addVal;
+        store.playTapSound();
+        updateModalValues();
+      };
+    });
+
+    // Submit
+    const btnSubmit = document.getElementById('btn-add-to-cart-submit');
+    if (btnSubmit) {
+      btnSubmit.onclick = () => {
+        const currentPres = presentations.find(p => p.id === selectedPresId) || presentations[0];
+        store.addToCart(productId, selectedPresId, quantity);
+        this.showToast(`+${quantity} ${currentPres.name} agregada(s)`);
+        modalContainer.innerHTML = '';
+      };
+    }
   }
 
   // --- Floating Cart Bar & Checkout Drawer (Flicker-Free, In-Place DOM Updates) ---
@@ -601,18 +662,30 @@ class AppController {
 
     // Floating bar (when drawer is closed)
     if (!this.cartDrawerOpen) {
+      const existingMiniBar = document.getElementById('cart-floating-minibar');
+      if (existingMiniBar) {
+        // Just update numbers in place with ZERO re-render
+        const pkgsEl = document.getElementById('cart-minibar-pkgs');
+        const unitsEl = document.getElementById('cart-minibar-units');
+        const totalEl = document.getElementById('cart-minibar-total');
+        if (pkgsEl) pkgsEl.innerText = cartDetailed.totalPackages;
+        if (unitsEl) unitsEl.innerText = `${cartDetailed.totalUnits} cervezas en total`;
+        if (totalEl) totalEl.innerText = store.formatCurrency(cartDetailed.total);
+        return;
+      }
+
       container.innerHTML = `
-        <div class="fixed bottom-20 left-0 right-0 z-40 px-3 max-w-md mx-auto">
+        <div id="cart-floating-minibar" class="fixed bottom-20 left-0 right-0 z-40 px-3 max-w-md mx-auto">
           <div class="ios-blur rounded-3xl p-3.5 border-2 border-amber-500/50 shadow-2xl flex items-center justify-between glow-gold">
             <div class="flex items-center gap-3.5">
-              <div class="w-12 h-12 bg-amber-500 text-slate-950 rounded-2xl flex items-center justify-center font-black text-xl shadow-md">
+              <div id="cart-minibar-pkgs" class="w-12 h-12 bg-amber-500 text-slate-950 rounded-2xl flex items-center justify-center font-black text-xl shadow-md">
                 ${cartDetailed.totalPackages}
               </div>
               <div>
-                <div class="text-xs text-slate-300 font-extrabold uppercase tracking-wider">
+                <div id="cart-minibar-units" class="text-xs text-slate-300 font-extrabold uppercase tracking-wider">
                   ${cartDetailed.totalUnits} cervezas en total
                 </div>
-                <div class="text-2xl font-black text-amber-400 leading-tight">
+                <div id="cart-minibar-total" class="text-2xl font-black text-amber-400 leading-tight">
                   ${store.formatCurrency(cartDetailed.total)}
                 </div>
               </div>
@@ -786,54 +859,102 @@ class AppController {
     const listContainer = document.getElementById('cart-items-scroll-list');
     if (!listContainer) return;
 
-    listContainer.innerHTML = cartDetailed.items.map(item => `
-      <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-900/90 border border-slate-800">
-        <div class="flex items-center gap-3 flex-1 mr-2">
-          <div class="w-12 h-12 bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center p-1 border border-slate-800 shrink-0">
-            ${item.product && item.product.image ? `
-              <img src="${item.product.image}" alt="${item.product.name}" class="w-full h-full object-contain" />
-            ` : `
-              <span class="text-2xl">${item.product?.icon || '🍺'}</span>
-            `}
+    const currentRows = listContainer.querySelectorAll('[data-cart-row-key]');
+    const existingKeys = Array.from(currentRows).map(r => r.getAttribute('data-cart-row-key'));
+    const newKeys = cartDetailed.items.map(i => i.cartKey);
+
+    const keysMatch = existingKeys.length === newKeys.length && existingKeys.every((k, i) => k === newKeys[i]);
+
+    if (keysMatch && existingKeys.length > 0) {
+      // In-place update: zero DOM reconstruction, zero flicker
+      cartDetailed.items.forEach(item => {
+        const row = listContainer.querySelector(`[data-cart-row-key="${item.cartKey}"]`);
+        if (!row) return;
+
+        const inputEl = row.querySelector(`[data-cart-input="${item.cartKey}"]`);
+        if (inputEl && parseInt(inputEl.value, 10) !== item.quantity) {
+          inputEl.value = item.quantity;
+        }
+
+        const subtotalEl = row.querySelector(`[data-cart-subtotal="${item.cartKey}"]`);
+        if (subtotalEl) subtotalEl.innerText = store.formatCurrency(item.subtotal);
+
+        const unitsEl = row.querySelector(`[data-cart-units="${item.cartKey}"]`);
+        if (unitsEl) unitsEl.innerText = `Descuenta: ${item.totalUnits} un. de stock`;
+      });
+    } else {
+      listContainer.innerHTML = cartDetailed.items.map(item => `
+        <div data-cart-row-key="${item.cartKey}" class="flex items-center justify-between p-3 rounded-2xl bg-slate-900/90 border border-slate-800">
+          <div class="flex items-center gap-3 flex-1 mr-2">
+            <div class="w-12 h-12 bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center p-1 border border-slate-800 shrink-0">
+              ${item.product && item.product.image ? `
+                <img src="${item.product.image}" alt="${item.product.name}" class="w-full h-full object-contain" />
+              ` : `
+                <span class="text-2xl">${item.product?.icon || '🍺'}</span>
+              `}
+            </div>
+            <div>
+              <div class="font-black text-base text-white leading-tight">${item.product ? item.product.name : 'Cerveza'}</div>
+              <div class="text-sm text-amber-400 font-extrabold">${item.presentationName} • ${store.formatCurrency(item.price)}</div>
+              <div data-cart-units="${item.cartKey}" class="text-[11px] text-slate-400">Descuenta: ${item.totalUnits} un. de stock</div>
+            </div>
           </div>
-          <div>
-            <div class="font-black text-base text-white leading-tight">${item.product ? item.product.name : 'Cerveza'}</div>
-            <div class="text-sm text-amber-400 font-extrabold">${item.presentationName} • ${store.formatCurrency(item.price)}</div>
-            <div class="text-[11px] text-slate-400">Descuenta: ${item.totalUnits} un. de stock</div>
+
+          <!-- Quantity Stepper Controls (Instant update with zero flicker) -->
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button 
+              data-cart-minus="${item.cartKey}"
+              class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-xl flex items-center justify-center border border-slate-700 touch-press"
+            >
+              -
+            </button>
+            
+            <input 
+              type="number" 
+              min="1" 
+              max="999"
+              data-cart-input="${item.cartKey}" 
+              value="${item.quantity}" 
+              class="w-12 h-10 text-center bg-slate-950 border border-amber-500/60 rounded-xl text-amber-300 font-black text-base focus:outline-none focus:border-amber-400"
+            />
+
+            <button 
+              data-cart-plus="${item.cartKey}"
+              class="w-10 h-10 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xl flex items-center justify-center shadow-md touch-press"
+            >
+              +
+            </button>
+
+            <div class="text-right ml-2 min-w-[55px]">
+              <div data-cart-subtotal="${item.cartKey}" class="font-black text-white text-base">${store.formatCurrency(item.subtotal)}</div>
+            </div>
           </div>
         </div>
+      `).join('');
 
-        <!-- Quantity Stepper Controls (Instant update with zero flicker) -->
-        <div class="flex items-center gap-1.5 shrink-0">
-          <button 
-            data-cart-minus="${item.cartKey}"
-            class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-xl flex items-center justify-center border border-slate-700 touch-press"
-          >
-            -
-          </button>
-          
-          <input 
-            type="number" 
-            min="1" 
-            max="999"
-            data-cart-input="${item.cartKey}" 
-            value="${item.quantity}" 
-            class="w-12 h-10 text-center bg-slate-950 border border-amber-500/60 rounded-xl text-amber-300 font-black text-base focus:outline-none focus:border-amber-400"
-          />
+      // Attach +/- events
+      listContainer.querySelectorAll('button[data-cart-plus]').forEach(btn => {
+        btn.onclick = () => {
+          const key = btn.getAttribute('data-cart-plus');
+          store.updateCartQuantity(key, 1);
+        };
+      });
 
-          <button 
-            data-cart-plus="${item.cartKey}"
-            class="w-10 h-10 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xl flex items-center justify-center shadow-md touch-press"
-          >
-            +
-          </button>
+      listContainer.querySelectorAll('button[data-cart-minus]').forEach(btn => {
+        btn.onclick = () => {
+          const key = btn.getAttribute('data-cart-minus');
+          store.updateCartQuantity(key, -1);
+        };
+      });
 
-          <div class="text-right ml-2 min-w-[55px]">
-            <div class="font-black text-white text-base">${store.formatCurrency(item.subtotal)}</div>
-          </div>
-        </div>
-      </div>
-    `).join('');
+      listContainer.querySelectorAll('input[data-cart-input]').forEach(input => {
+        input.onchange = (e) => {
+          const key = input.getAttribute('data-cart-input');
+          const val = parseInt(e.target.value, 10);
+          store.setCartQuantity(key, val);
+        };
+      });
+    }
 
     // Update totals displays
     const totalDisplay = document.getElementById('cart-total-display');
@@ -843,29 +964,6 @@ class AppController {
     if (totalDisplay) totalDisplay.innerText = store.formatCurrency(cartDetailed.total);
     if (unitsDisplay) unitsDisplay.innerText = `${cartDetailed.totalUnits} cervezas en total`;
     if (confirmBtnText) confirmBtnText.innerText = `REGISTRAR VENTA (${store.formatCurrency(cartDetailed.total)})`;
-
-    // Attach +/- events
-    listContainer.querySelectorAll('button[data-cart-plus]').forEach(btn => {
-      btn.onclick = () => {
-        const key = btn.getAttribute('data-cart-plus');
-        store.updateCartQuantity(key, 1);
-      };
-    });
-
-    listContainer.querySelectorAll('button[data-cart-minus]').forEach(btn => {
-      btn.onclick = () => {
-        const key = btn.getAttribute('data-cart-minus');
-        store.updateCartQuantity(key, -1);
-      };
-    });
-
-    listContainer.querySelectorAll('input[data-cart-input]').forEach(input => {
-      input.onchange = (e) => {
-        const key = input.getAttribute('data-cart-input');
-        const val = parseInt(e.target.value, 10);
-        store.setCartQuantity(key, val);
-      };
-    });
 
     // Reattach checkout controls
     this.attachCheckoutFooterEvents();
