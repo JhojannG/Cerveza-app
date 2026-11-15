@@ -2,12 +2,12 @@
 <html lang="es" class="dark">
 <head>
   <meta charset="UTF-8">
-  <title>Control Birras - Cuadre de Caja y Ventas</title>
+  <title>Cervezas app - Cuadre de Caja y Ventas</title>
 
   <!-- iOS PWA Full Screen & Standalone Mode -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Control Birras">
+  <meta name="apple-mobile-web-app-title" content="Cervezas app">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#090d16">
   
@@ -50,12 +50,10 @@
   <header class="fixed top-0 left-0 right-0 z-40 ios-blur border-b border-slate-800/80 pt-safe">
     <div class="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
       <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center text-xl shadow-md border border-amber-300/40 glow-gold">
-          🍺
-        </div>
+        <img src="icons/icon-192.png" alt="Cervezas app" class="w-9 h-9 rounded-xl shadow-md border border-amber-300/40 object-cover glow-gold" />
         <div>
           <h1 id="header-title" class="font-black text-white text-base tracking-tight leading-none flex items-center gap-1.5">
-            Control Birras
+            Cervezas app
           </h1>
           <p class="text-[10px] font-bold text-amber-400/90 tracking-wide mt-0.5">Ecuador • USD $</p>
         </div>
@@ -68,8 +66,8 @@
     </div>
   </header>
 
-  <!-- Main Scrollable App Container -->
-  <main class="flex-1 max-w-md w-full mx-auto px-3.5 pt-20 pb-safe">
+  <!-- Main Scrollable App Container (Safe from Notch/Header Overlap) -->
+  <main class="flex-1 max-w-md w-full mx-auto px-3.5 pt-header-safe pb-safe">
     <!-- Active Tab Dynamic Content -->
     <div id="tab-content" class="min-h-full">
       <!-- Injected by app.js -->

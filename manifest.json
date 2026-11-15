@@ -1,6 +1,6 @@
 {
-  "name": "Control Birras - Cuadre de Caja",
-  "short_name": "Control Birras",
+  "name": "Cervezas app",
+  "short_name": "Cervezas app",
   "description": "Control de ventas, stock y cuadre de caja de cervezas en tiempo real",
   "start_url": "./index.html",
   "display": "standalone",

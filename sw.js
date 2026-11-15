@@ -1,4 +1,4 @@
-const CACHE_NAME = 'control-birras-v1.1.4';
+const CACHE_NAME = 'cervezas-app-v1.2.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
