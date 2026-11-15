@@ -78,11 +78,11 @@ html, body {
 
 /* Touch feedback animation */
 .touch-press {
-  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.12s ease;
+  transition: transform 0.08s ease;
 }
 .touch-press:active {
-  transform: scale(0.96);
-  opacity: 0.85;
+  transform: scale(0.97);
+  
 }
 
 /* Glowing gold badge */
