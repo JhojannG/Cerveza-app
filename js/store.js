@@ -24,30 +24,41 @@ class Store {
     this.syncStatus = 'connecting';
     this.syncError = '';
 
-    // Load initial state from LocalStorage or Defaults
+    // Clear any obsolete localStorage versions
+    try {
+      localStorage.removeItem('cb_products');
+      localStorage.removeItem('cb_products_v2');
+      localStorage.removeItem('cb_products_v3');
+    } catch (e) {}
+
+    // Load initial state strictly with official catalog
     this.state = {
-      products: this.loadFromStorage('cb_products_v4', INITIAL_PRODUCTS),
-      sales: this.loadFromStorage('cb_sales', []),
-      stockMovements: this.loadFromStorage('cb_movements', []),
+      products: this.loadFromStorage('cb_products_official_v1', INITIAL_PRODUCTS),
+      sales: this.loadFromStorage('cb_sales_v2', []),
+      stockMovements: this.loadFromStorage('cb_movements_v2', []),
       currentSeller: localStorage.getItem('cb_current_seller') || 'jhojann-gabriel',
       cart: [],
       selectedDate: this.getTodayDateString(),
       storeId: localStorage.getItem('cb_store_id') || 'tienda-principal',
-      firebaseConfig: this.loadFromStorage('cb_firebase_config', DEFAULT_FIREBASE_CONFIG),
+      firebaseConfig: DEFAULT_FIREBASE_CONFIG,
       activeTab: 'vender',
       soundEnabled: localStorage.getItem('cb_sound') !== 'false'
     };
 
-    // Initialize Web Audio Context on first interaction
+    // Ensure state.products only has the 6 official products
+    if (!this.state.products || this.state.products.length !== INITIAL_PRODUCTS.length || !this.state.products[0].presentations) {
+      this.state.products = JSON.parse(JSON.stringify(INITIAL_PRODUCTS));
+      this.saveToStorage();
+    }
+
     this.audioCtx = null;
 
-    // Check if Firebase was previously configured
+    // Connect to Firebase
     if (this.state.firebaseConfig && this.state.firebaseConfig.projectId) {
       this.initFirebase(this.state.firebaseConfig);
     }
   }
 
-  // --- Subscriptions ---
   subscribe(listener) {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -64,7 +75,6 @@ class Store {
     }
   }
 
-  // --- Date Helpers (Ecuador / Local) ---
   getTodayDateString() {
     const d = new Date();
     const year = d.getFullYear();
@@ -87,33 +97,25 @@ class Store {
     return `$${num.toFixed(2)}`;
   }
 
-  // --- Local Storage Helpers ---
   loadFromStorage(key, fallback) {
     try {
       const data = localStorage.getItem(key);
       return data ? JSON.parse(data) : fallback;
     } catch (e) {
-      console.warn(`Error reading ${key} from storage:`, e);
       return fallback;
     }
   }
 
   saveToStorage() {
     try {
-      localStorage.setItem('cb_products_v4', JSON.stringify(this.state.products));
-      localStorage.setItem('cb_sales', JSON.stringify(this.state.sales));
-      localStorage.setItem('cb_movements', JSON.stringify(this.state.stockMovements));
+      localStorage.setItem('cb_products_official_v1', JSON.stringify(this.state.products));
+      localStorage.setItem('cb_sales_v2', JSON.stringify(this.state.sales));
+      localStorage.setItem('cb_movements_v2', JSON.stringify(this.state.stockMovements));
       localStorage.setItem('cb_current_seller', this.state.currentSeller);
       localStorage.setItem('cb_store_id', this.state.storeId);
-      if (this.state.firebaseConfig) {
-        localStorage.setItem('cb_firebase_config', JSON.stringify(this.state.firebaseConfig));
-      }
-    } catch (e) {
-      console.error('Error saving state to localStorage:', e);
-    }
+    } catch (e) {}
   }
 
-  // --- Audio Feedback Synth ---
   initAudio() {
     if (!this.audioCtx) {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -198,7 +200,6 @@ class Store {
     } catch (e) {}
   }
 
-  // --- Seller Management ---
   setCurrentSeller(sellerId) {
     this.state.currentSeller = sellerId;
     this.playTapSound();
@@ -214,7 +215,6 @@ class Store {
     const product = this.state.products.find(p => p.id === productId);
     if (!product) return;
 
-    // Find requested presentation or default to the first one
     let pres = null;
     if (product.presentations && product.presentations.length > 0) {
       pres = presentationId 
@@ -303,7 +303,7 @@ class Store {
       total,
       totalCost,
       totalProfit: total - totalCost,
-      totalUnits, // Total actual beers/cans
+      totalUnits,
       totalPackages,
       totalItems: totalPackages
     };
@@ -372,14 +372,13 @@ class Store {
     this.playSaleSuccessSound();
     this.notify();
 
-    // Push to Firestore if cloud connected
+    // Push to Firestore inventory
     this.syncDocToFirestore('sales', saleRecord);
     this.syncBatchProductsToFirestore(updatedProducts);
 
     return saleRecord;
   }
 
-  // Cancel / Anular Venta (Reverses stock)
   cancelSale(saleId) {
     const saleIndex = this.state.sales.findIndex(s => s.id === saleId);
     if (saleIndex === -1) return false;
@@ -413,7 +412,6 @@ class Store {
     return true;
   }
 
-  // Settle Fiado / Mark as Paid
   settleFiado(saleId, paidMethod = 'efectivo') {
     const sale = this.state.sales.find(s => s.id === saleId);
     if (!sale || sale.isPaid || sale.status === 'cancelled') return false;
@@ -429,7 +427,6 @@ class Store {
     return true;
   }
 
-  // --- Stock & Inventory Operations ---
   registerStockIncome({ productId, quantity, jabas = 0, costTotal = 0, supplier = 'Dinadec / Cervecería', notes = '' }) {
     const prodIndex = this.state.products.findIndex(p => p.id === productId);
     if (prodIndex === -1) return false;
@@ -468,7 +465,7 @@ class Store {
     this.notify();
 
     this.syncDocToFirestore('movements', movement);
-    this.syncDocToFirestore('products', updatedProduct);
+    this.syncDocToFirestore('inventory', updatedProduct);
 
     return true;
   }
@@ -506,31 +503,11 @@ class Store {
     this.notify();
 
     this.syncDocToFirestore('movements', movement);
-    this.syncDocToFirestore('products', updatedProduct);
+    this.syncDocToFirestore('inventory', updatedProduct);
 
     return true;
   }
 
-  updatePresentationPrice(productId, presentationId, newPrice) {
-    const prodIndex = this.state.products.findIndex(p => p.id === productId);
-    if (prodIndex === -1) return false;
-
-    const product = this.state.products[prodIndex];
-    if (!product.presentations) return false;
-
-    const presIndex = product.presentations.findIndex(pr => pr.id === presentationId);
-    if (presIndex === -1) return false;
-
-    product.presentations[presIndex].price = Number(newPrice);
-    this.state.products[prodIndex] = { ...product };
-
-    this.playTapSound();
-    this.notify();
-    this.syncDocToFirestore('products', this.state.products[prodIndex]);
-    return true;
-  }
-
-  // --- Daily Metrics Calculations ---
   getDailyMetrics(dateStr = this.state.selectedDate) {
     const salesForDay = this.state.sales.filter(s => s.dateStr === dateStr && s.status !== 'cancelled');
 
@@ -579,7 +556,6 @@ class Store {
       }
     }
 
-    // Previous fiados paid today
     const previousFiadosPaidToday = this.state.sales.filter(s => {
       if (s.dateStr === dateStr || s.status === 'cancelled' || s.paymentMethod !== 'fiado' || !s.isPaid || !s.paidAt) {
         return false;
@@ -610,10 +586,9 @@ class Store {
     };
   }
 
-  // --- WhatsApp Summary Generator ---
   generateWhatsAppSummary(dateStr = this.state.selectedDate) {
     const metrics = this.getDailyMetrics(dateStr);
-    const lowStockProducts = this.state.products.filter(p => p.stock <= p.minStockAlert);
+    const lowStockProducts = this.state.products.filter(p => p.stock <= (p.minStockAlert || 10));
 
     const [y, m, d] = dateStr.split('-');
     const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
@@ -646,7 +621,7 @@ class Store {
       text += `━━━━━━━━━━━━━━━━━━━━━━\n`;
       text += `⚠️ *ALERTAS DE STOCK (¡PEDIR MERCADERÍA!):*\n`;
       for (const p of lowStockProducts) {
-        text += `• ${p.name}: *${p.stock} un.* restantes (mínimo ${p.minStockAlert})\n`;
+        text += `• ${p.name}: *${p.stock} un.* restantes\n`;
       }
     }
 
@@ -660,7 +635,6 @@ class Store {
   async initFirebase(config) {
     if (!config || !config.projectId || !config.apiKey) {
       this.syncStatus = 'local';
-      this.syncError = 'Sin credenciales configuradas';
       this.notify();
       return;
     }
@@ -692,17 +666,21 @@ class Store {
 
       const storeId = this.state.storeId || 'tienda-principal';
 
-      // 1. Products listener
-      const productsCol = collection(this.firestore, `stores/${storeId}/products`);
-      const unsubProducts = onSnapshot(productsCol, (snapshot) => {
+      // Listen strictly to the official inventory collection
+      const inventoryCol = collection(this.firestore, `stores/${storeId}/inventory`);
+      const unsubInventory = onSnapshot(inventoryCol, (snapshot) => {
         if (!snapshot.empty) {
           const cloudProducts = [];
           snapshot.forEach(docSnap => cloudProducts.push(docSnap.data()));
+          // Sort strictly in catalog order
+          const idOrder = INITIAL_PRODUCTS.map(p => p.id);
+          cloudProducts.sort((a, b) => idOrder.indexOf(a.id) - idOrder.indexOf(b.id));
           this.state.products = cloudProducts;
           this.syncStatus = 'online';
           this.syncError = '';
           this.notify();
         } else {
+          // Push initial official products to cloud
           this.syncBatchProductsToFirestore(this.state.products);
           this.syncStatus = 'online';
           this.notify();
@@ -713,9 +691,9 @@ class Store {
         this.syncError = err.message;
         this.notify();
       });
-      this.unsubscribeFirestore.push(unsubProducts);
+      this.unsubscribeFirestore.push(unsubInventory);
 
-      // 2. Sales listener
+      // Listen to sales
       const salesCol = collection(this.firestore, `stores/${storeId}/sales`);
       const unsubSales = onSnapshot(salesCol, (snapshot) => {
         const cloudSales = [];
@@ -727,13 +705,10 @@ class Store {
         this.notify();
       }, (err) => {
         console.warn('Firestore Sales sync error:', err);
-        this.syncStatus = 'error';
-        this.syncError = err.message;
-        this.notify();
       });
       this.unsubscribeFirestore.push(unsubSales);
 
-      // 3. Movements listener
+      // Listen to movements
       const movCol = collection(this.firestore, `stores/${storeId}/movements`);
       const unsubMov = onSnapshot(movCol, (snapshot) => {
         const cloudMov = [];
@@ -747,8 +722,6 @@ class Store {
       this.unsubscribeFirestore.push(unsubMov);
 
       this.syncStatus = 'online';
-      this.state.firebaseConfig = config;
-      this.saveToStorage();
       this.notify();
 
     } catch (err) {
@@ -764,7 +737,8 @@ class Store {
     try {
       const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
       const storeId = this.state.storeId || 'tienda-principal';
-      const docRef = doc(this.firestore, `stores/${storeId}/${collectionName}`, data.id);
+      const col = collectionName === 'products' ? 'inventory' : collectionName;
+      const docRef = doc(this.firestore, `stores/${storeId}/${col}`, data.id);
       await setDoc(docRef, data, { merge: true });
     } catch (err) {
       console.warn(`Error writing to ${collectionName}:`, err);
@@ -777,7 +751,7 @@ class Store {
       const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
       const storeId = this.state.storeId || 'tienda-principal';
       for (const p of products) {
-        const docRef = doc(this.firestore, `stores/${storeId}/products`, p.id);
+        const docRef = doc(this.firestore, `stores/${storeId}/inventory`, p.id);
         await setDoc(docRef, p, { merge: true });
       }
     } catch (err) {
@@ -785,10 +759,9 @@ class Store {
     }
   }
 
-  // Backup & Restore
   exportBackupJSON() {
     const backup = {
-      version: '2.0.0',
+      version: '3.0.0',
       exportedAt: new Date().toISOString(),
       storeId: this.state.storeId,
       products: this.state.products,
@@ -819,12 +792,13 @@ class Store {
   }
 
   resetDemoData() {
-    this.state.products = [...INITIAL_PRODUCTS];
+    this.state.products = JSON.parse(JSON.stringify(INITIAL_PRODUCTS));
     this.state.sales = [];
     this.state.stockMovements = [];
     this.state.cart = [];
     this.saveToStorage();
     this.notify();
+    this.syncBatchProductsToFirestore(this.state.products);
   }
 }
 
