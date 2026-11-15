@@ -11,7 +11,6 @@ class AppController {
     this.currentTab = 'vender';
     this.cartDrawerOpen = false;
     this.paymentMethod = 'efectivo';
-    this.isFiado = false;
     this.activeModal = null;
     this.stockSearch = '';
     this.incomeMode = 'jabas';
@@ -758,7 +757,7 @@ class AppController {
                 <button 
                   id="btn-pay-efectivo" 
                   class="py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press ${
-                    this.paymentMethod === 'efectivo' && !this.isFiado
+                    this.paymentMethod === 'efectivo'
                       ? 'bg-emerald-500 text-slate-950 border-emerald-400 glow-emerald' 
                       : 'bg-slate-900 text-slate-300 border-slate-800'
                   }"
@@ -768,7 +767,7 @@ class AppController {
                 <button 
                   id="btn-pay-deuna" 
                   class="py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press ${
-                    this.paymentMethod === 'deuna' && !this.isFiado
+                    this.paymentMethod === 'deuna'
                       ? 'bg-sky-500 text-white border-sky-400 glow-gold' 
                       : 'bg-slate-900 text-slate-300 border-slate-800'
                   }"
@@ -776,37 +775,6 @@ class AppController {
                   <span class="text-lg">📲</span> DEUNA / TRANSF.
                 </button>
               </div>
-            </div>
-
-            <!-- Fiado / Por Cobrar Toggle -->
-            <div class="bg-slate-900/90 p-3 rounded-2xl border border-slate-800">
-              <div class="flex items-center justify-between">
-                <label for="toggle-fiado" class="flex items-center gap-2 cursor-pointer">
-                  <span class="text-xl">📋</span>
-                  <div>
-                    <span class="text-sm font-black text-white block">¿Es Fiado / Por Cobrar?</span>
-                    <span class="text-xs text-slate-400">No suma dinero físico hasta que el cliente pague</span>
-                  </div>
-                </label>
-                <input 
-                  type="checkbox" 
-                  id="toggle-fiado" 
-                  ${this.isFiado ? 'checked' : ''} 
-                  class="w-6 h-6 accent-amber-500 rounded cursor-pointer"
-                />
-              </div>
-
-              ${this.isFiado ? `
-                <div class="mt-2.5 pt-2.5 border-t border-slate-800">
-                  <label class="text-xs text-amber-400 font-black block mb-1">NOMBRE DEL CLIENTE:</label>
-                  <input 
-                    type="text" 
-                    id="input-customer-name" 
-                    placeholder="Ej. Don Carlos, Vecino Juan..." 
-                    class="w-full bg-slate-950 border-2 border-amber-500/60 rounded-xl px-3.5 py-2.5 text-base text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 font-bold"
-                  />
-                </div>
-              ` : ''}
             </div>
 
             <!-- Summary & Giant Action Button -->
@@ -979,12 +947,10 @@ class AppController {
     // Payment methods
     const btnEfectivo = document.getElementById('btn-pay-efectivo');
     const btnDeuna = document.getElementById('btn-pay-deuna');
-    const toggleFiado = document.getElementById('toggle-fiado');
 
     if (btnEfectivo) {
       btnEfectivo.onclick = () => {
         this.paymentMethod = 'efectivo';
-        this.isFiado = false;
         store.playTapSound();
         this.updatePaymentButtons();
       };
@@ -993,21 +959,8 @@ class AppController {
     if (btnDeuna) {
       btnDeuna.onclick = () => {
         this.paymentMethod = 'deuna';
-        this.isFiado = false;
         store.playTapSound();
         this.updatePaymentButtons();
-      };
-    }
-
-    if (toggleFiado) {
-      toggleFiado.onchange = (e) => {
-        this.isFiado = e.target.checked;
-        store.playTapSound();
-        this.cartDrawerOpen = true;
-        // Re-render the full drawer shell to show/hide customer name input
-        const drawerSheet = document.getElementById('cart-drawer-sheet');
-        if (drawerSheet) drawerSheet.remove();
-        this.renderCartFloatingBar();
       };
     }
 
@@ -1027,25 +980,12 @@ class AppController {
     const btnConfirm = document.getElementById('btn-confirm-sale');
     if (btnConfirm) {
       btnConfirm.onclick = () => {
-        let customerName = '';
-        if (this.isFiado) {
-          const custInput = document.getElementById('input-customer-name');
-          customerName = custInput ? custInput.value.trim() : '';
-          if (!customerName) {
-            alert('Por favor ingrese el nombre del cliente para el fiado.');
-            return;
-          }
-        }
-
         const sale = store.registerSale({
-          paymentMethod: this.paymentMethod,
-          isFiado: this.isFiado,
-          customerName
+          paymentMethod: this.paymentMethod
         });
 
         if (sale) {
           this.cartDrawerOpen = false;
-          this.isFiado = false;
           this.showToast(`¡Venta de ${store.formatCurrency(sale.total)} registrada!`);
           this.render();
         }
@@ -1057,15 +997,12 @@ class AppController {
     const btnEfectivo = document.getElementById('btn-pay-efectivo');
     const btnDeuna = document.getElementById('btn-pay-deuna');
     if (btnEfectivo && btnDeuna) {
-      if (this.paymentMethod === 'efectivo' && !this.isFiado) {
+      if (this.paymentMethod === 'efectivo') {
         btnEfectivo.className = 'py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press bg-emerald-500 text-slate-950 border-emerald-400 glow-emerald';
         btnDeuna.className = 'py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press bg-slate-900 text-slate-300 border-slate-800';
-      } else if (this.paymentMethod === 'deuna' && !this.isFiado) {
-        btnEfectivo.className = 'py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press bg-slate-900 text-slate-300 border-slate-800';
-        btnDeuna.className = 'py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press bg-sky-500 text-white border-sky-400 glow-gold';
       } else {
         btnEfectivo.className = 'py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press bg-slate-900 text-slate-300 border-slate-800';
-        btnDeuna.className = 'py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press bg-slate-900 text-slate-300 border-slate-800';
+        btnDeuna.className = 'py-3 px-3 rounded-2xl border-2 text-xs sm:text-sm font-black flex items-center justify-center gap-2 touch-press bg-sky-500 text-white border-sky-400 glow-gold';
       }
     }
   }
@@ -1078,32 +1015,30 @@ class AppController {
     const todayStr = store.getTodayDateString();
     const isToday = store.state.selectedDate === todayStr;
 
-    const allPendingFiados = store.state.sales.filter(s => s.paymentMethod === 'fiado' && !s.isPaid && s.status !== 'cancelled');
-
     return `
       <div class="space-y-4">
-        <!-- Date Selector Header -->
-        <div class="ios-card-glass p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
-          <div>
-            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">CUADRE DE CAJA:</div>
-            <div class="font-black text-white text-base flex items-center gap-2">
+        <!-- Date Selector Header (Spacious & Touch-Friendly on iPhone) -->
+        <div class="ios-card-glass p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="text-xs text-slate-400 font-black uppercase tracking-wider">CUADRE DE CAJA:</div>
+            <div class="font-black text-white text-sm sm:text-base flex items-center gap-2">
               <span>📅 ${isToday ? 'Hoy' : store.state.selectedDate}</span>
-              ${isToday ? '<span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">En curso</span>' : ''}
+              ${isToday ? '<span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full font-black border border-emerald-500/30">En curso</span>' : ''}
             </div>
           </div>
 
-          <div class="flex items-center gap-1.5">
-            <button id="btn-date-prev" class="p-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs touch-press">
+          <div class="grid grid-cols-5 gap-2 pt-1">
+            <button id="btn-date-prev" class="col-span-1 py-2.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-black text-xs touch-press border border-slate-700 text-center">
               ← Ayer
             </button>
-            <button id="btn-date-today" class="p-2 rounded-xl ${isToday ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300'} text-xs touch-press">
+            <button id="btn-date-today" class="col-span-1 py-2.5 px-2 rounded-xl ${isToday ? 'bg-amber-500 text-slate-950 font-black glow-gold' : 'bg-slate-800 text-slate-200'} text-xs font-black touch-press border border-slate-700 text-center">
               Hoy
             </button>
             <input 
               type="date" 
               id="input-date-picker" 
               value="${store.state.selectedDate}"
-              class="bg-slate-800 text-white text-xs p-1.5 rounded-xl border border-slate-700 cursor-pointer"
+              class="col-span-3 bg-slate-900 text-white font-black text-xs px-3 py-2.5 rounded-xl border border-slate-700 cursor-pointer min-h-[42px] focus:outline-none focus:border-amber-400"
             />
           </div>
         </div>
@@ -1129,7 +1064,7 @@ class AppController {
           </div>
         </div>
 
-        <!-- Desglose de Dinero (CRÍTICO para cuadrar caja) -->
+        <!-- Desglose de Dinero (Efectivo vs Deuna) -->
         <div class="ios-card-glass p-3.5 rounded-2xl border border-slate-800 space-y-3">
           <div class="flex items-center justify-between">
             <h3 class="text-xs uppercase font-black tracking-wider text-slate-300 flex items-center gap-1.5">
@@ -1140,85 +1075,34 @@ class AppController {
             </span>
           </div>
 
-          <!-- Cash in Drawer -->
-          <div class="p-3 rounded-xl bg-slate-950/80 border-2 border-emerald-500/50 flex items-center justify-between glow-emerald">
-            <div>
-              <div class="text-xs font-black text-white flex items-center gap-1.5">
-                <span>💵 EFECTIVO FÍSICO EN CAJÓN</span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <!-- Cash in Drawer -->
+            <div class="p-3.5 rounded-2xl bg-slate-950/80 border-2 border-emerald-500/50 flex items-center justify-between glow-emerald">
+              <div>
+                <div class="text-xs font-black text-white flex items-center gap-1.5">
+                  <span>💵 EFECTIVO EN CAJÓN</span>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Billetes y monedas físicos</div>
               </div>
-              <div class="text-[11px] text-slate-400 mt-0.5">Dinero en billetes y monedas que debe haber</div>
+              <div class="text-2xl font-black text-emerald-400">
+                ${store.formatCurrency(metrics.cashInDrawer)}
+              </div>
             </div>
-            <div class="text-2xl font-black text-emerald-400">
-              ${store.formatCurrency(metrics.cashInDrawer)}
-            </div>
-          </div>
 
-          <!-- Deuna / Transfers -->
-          <div class="p-3 rounded-xl bg-slate-950/60 border border-sky-500/40 flex items-center justify-between">
-            <div>
-              <div class="text-xs font-black text-white flex items-center gap-1.5">
-                <span>📲 DEUNA / TRANSFERENCIAS</span>
+            <!-- Deuna / Transfers -->
+            <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-sky-500/40 flex items-center justify-between">
+              <div>
+                <div class="text-xs font-black text-white flex items-center gap-1.5">
+                  <span>📲 DEUNA / TRANSF.</span>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Recibido en cuenta</div>
               </div>
-              <div class="text-[11px] text-slate-400 mt-0.5">Pagos recibidos en cuenta bancaria</div>
-            </div>
-            <div class="text-xl font-black text-sky-400">
-              ${store.formatCurrency(metrics.deunaTransfer)}
-            </div>
-          </div>
-
-          <!-- Pending Fiados -->
-          <div class="p-3 rounded-xl bg-slate-950/60 border border-amber-500/40 flex items-center justify-between">
-            <div>
-              <div class="text-xs font-black text-white flex items-center gap-1.5">
-                <span>📋 FIADOS POR COBRAR</span>
+              <div class="text-2xl font-black text-sky-400">
+                ${store.formatCurrency(metrics.deunaTransfer)}
               </div>
-              <div class="text-[11px] text-slate-400 mt-0.5">Deuda de clientes pendientes de pago</div>
-            </div>
-            <div class="text-xl font-black text-amber-400">
-              ${store.formatCurrency(metrics.pendingFiados)}
             </div>
           </div>
         </div>
-
-        <!-- Fiados Pendientes por Cobrar -->
-        ${allPendingFiados.length > 0 ? `
-          <div class="ios-card-glass p-3.5 rounded-2xl border border-amber-500/30 space-y-3">
-            <div class="flex items-center justify-between">
-              <h3 class="text-xs uppercase font-black tracking-wider text-amber-400 flex items-center gap-1.5">
-                <span>⚠️</span> FIADOS PENDIENTES DE COBRO (${allPendingFiados.length})
-              </h3>
-              <span class="text-[10px] text-slate-400">Toque para cobrar</span>
-            </div>
-
-            <div class="space-y-2">
-              ${allPendingFiados.map(fiado => `
-                <div class="p-3 rounded-xl bg-slate-900 border border-amber-500/20 flex items-center justify-between">
-                  <div>
-                    <div class="font-black text-white text-sm flex items-center gap-2">
-                      <span>👤 ${fiado.customerName || 'Cliente'}</span>
-                      <span class="text-[10px] text-slate-400 font-normal">(${fiado.dateStr} - ${fiado.timeStr})</span>
-                    </div>
-                    <div class="text-xs text-slate-400 mt-0.5">
-                      ${fiado.items.map(it => `${it.quantity}x ${it.productName} (${it.presentationName || ''})`).join(', ')}
-                    </div>
-                    <div class="text-xs text-amber-400 font-extrabold mt-1">
-                      Debe: ${store.formatCurrency(fiado.total)}
-                    </div>
-                  </div>
-
-                  <button 
-                    data-settle-id="${fiado.id}" 
-                    data-amount="${fiado.total}"
-                    data-client="${fiado.customerName}"
-                    class="btn-settle-fiado px-3 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow-md touch-press"
-                  >
-                    COBRAR ✓
-                  </button>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
 
         <!-- Desglose por Vendedor -->
         <div class="ios-card-glass p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
@@ -1364,25 +1248,6 @@ class AppController {
             this.showToast('Venta anulada y stock devuelto', 'warning');
             this.render();
           }
-        }
-      };
-    });
-
-    // Settle fiado buttons
-    document.querySelectorAll('.btn-settle-fiado').forEach(btn => {
-      btn.onclick = () => {
-        const saleId = btn.getAttribute('data-settle-id');
-        const amount = btn.getAttribute('data-amount');
-        const client = btn.getAttribute('data-client');
-
-        const method = confirm(`Cobrar $${amount} a "${client}":\n\nPresione [Aceptar] para EFECTIVO en cajón.\nPresione [Cancelar] si pagó por DEUNA / Transferencia.`)
-          ? 'efectivo'
-          : 'deuna';
-
-        const ok = store.settleFiado(saleId, method);
-        if (ok) {
-          this.showToast(`Fiado cobrado en ${method.toUpperCase()}`);
-          this.render();
         }
       };
     });

@@ -335,7 +335,7 @@ class Store {
   }
 
   // --- Sale Operations ---
-  registerSale({ paymentMethod = 'efectivo', isFiado = false, customerName = '' }) {
+  registerSale({ paymentMethod = 'efectivo' }) {
     const cartDetailed = this.getCartDetailed();
     if (cartDetailed.items.length === 0) return null;
 
@@ -368,12 +368,7 @@ class Store {
       totalCost: Number(cartDetailed.totalCost.toFixed(2)),
       profit: Number(cartDetailed.totalProfit.toFixed(2)),
       totalUnits: cartDetailed.totalUnits,
-      paymentMethod: isFiado ? 'fiado' : paymentMethod,
-      originalPaymentType: paymentMethod,
-      customerName: isFiado ? (customerName.trim() || 'Cliente sin nombre') : '',
-      isPaid: !isFiado,
-      paidAt: !isFiado ? now.getTime() : null,
-      paidMethod: !isFiado ? paymentMethod : null,
+      paymentMethod: paymentMethod === 'deuna' ? 'deuna' : 'efectivo',
       status: 'completed'
     };
 
@@ -541,7 +536,6 @@ class Store {
     let totalUnits = 0;
     let cashInDrawer = 0;
     let deunaTransfer = 0;
-    let pendingFiados = 0;
 
     const sellerBreakdown = {};
     for (const seller of SELLERS) {
@@ -564,36 +558,10 @@ class Store {
         sellerBreakdown[sale.sellerId].count += 1;
       }
 
-      if (sale.paymentMethod === 'fiado') {
-        if (!sale.isPaid) {
-          pendingFiados += sale.total;
-        } else {
-          if (sale.paidMethod === 'deuna' || sale.paidMethod === 'transferencia') {
-            deunaTransfer += sale.total;
-          } else {
-            cashInDrawer += sale.total;
-          }
-        }
-      } else if (sale.paymentMethod === 'deuna' || sale.paymentMethod === 'transferencia') {
+      if (sale.paymentMethod === 'deuna' || sale.paymentMethod === 'transferencia') {
         deunaTransfer += sale.total;
       } else {
         cashInDrawer += sale.total;
-      }
-    }
-
-    const previousFiadosPaidToday = this.state.sales.filter(s => {
-      if (s.dateStr === dateStr || s.status === 'cancelled' || s.paymentMethod !== 'fiado' || !s.isPaid || !s.paidAt) {
-        return false;
-      }
-      const paidDate = new Date(s.paidAt).toISOString().split('T')[0];
-      return paidDate === dateStr;
-    });
-
-    for (const s of previousFiadosPaidToday) {
-      if (s.paidMethod === 'deuna' || s.paidMethod === 'transferencia') {
-        deunaTransfer += s.total;
-      } else {
-        cashInDrawer += s.total;
       }
     }
 
@@ -605,7 +573,6 @@ class Store {
       totalUnits,
       cashInDrawer: Number(cashInDrawer.toFixed(2)),
       deunaTransfer: Number(deunaTransfer.toFixed(2)),
-      pendingFiados: Number(pendingFiados.toFixed(2)),
       sellerBreakdown,
       salesList: salesForDay
     };
@@ -620,7 +587,7 @@ class Store {
     const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const formattedDate = `${dayNames[dateObj.getDay()]} ${d}/${m}/${y}`;
 
-    let text = `🍺 *CONTROL BIRRAS - CUADRE DEL DÍA*\n`;
+    let text = `🍺 *CERVEZAS APP - CUADRE DEL DÍA*\n`;
     text += `📅 *Fecha:* ${formattedDate}\n`;
     text += `🏪 *Tienda:* Registro Principal\n`;
     text += `━━━━━━━━━━━━━━━━━━━━━━\n`;
@@ -631,7 +598,6 @@ class Store {
     text += `💵 *CUADRE DE CAJA:*\n`;
     text += `• 💵 *Efectivo en Cajón:* ${this.formatCurrency(metrics.cashInDrawer)}\n`;
     text += `• 📲 *Deuna / Transfer:* ${this.formatCurrency(metrics.deunaTransfer)}\n`;
-    text += `• 📋 *Fiados Pendientes:* ${this.formatCurrency(metrics.pendingFiados)}\n`;
     text += `━━━━━━━━━━━━━━━━━━━━━━\n`;
     text += `👥 *VENTAS POR VENDEDOR:*\n`;
 
