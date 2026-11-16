@@ -585,7 +585,9 @@ class AppController {
           if (priceSpan) priceSpan.className = "pres-chip-price text-sm font-black text-amber-400";
           if (unitsSpan) unitsSpan.className = "pres-chip-units text-[10px] text-slate-400";
         }
-      });        // Update quick set chips highlight
+      });
+
+      // Update quick set chips highlight
       modalContainer.querySelectorAll('button[data-quick-set]').forEach(btn => {
         const val = parseInt(btn.getAttribute('data-quick-set'), 10);
         if (val === quantity) {
@@ -1388,14 +1390,23 @@ ${summaryText}
           </div>
         </div>
 
-        <!-- Big Main Action: + Registrar Ingreso de Mercadería -->
-        <button 
-          id="btn-open-income-modal"
-          class="w-full bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-sm py-4 rounded-2xl shadow-xl flex items-center justify-center gap-2 touch-press glow-gold"
-        >
-          <span class="text-xl">📦</span>
-          <span>+ REGISTRAR INGRESO DE MERCADERÍA</span>
-        </button>
+        <!-- Two Main Actions: + Nueva Mercadería y + Sumar Stock -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <button 
+            id="btn-open-new-product-modal"
+            class="py-3.5 px-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs sm:text-sm shadow-xl flex items-center justify-center gap-2 touch-press glow-emerald"
+          >
+            <span class="text-xl">✨</span>
+            <span class="leading-tight text-center">+ NUEVA MERCADERÍA</span>
+          </button>
+          <button 
+            id="btn-open-income-modal"
+            class="py-3.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl flex items-center justify-center gap-2 touch-press glow-gold"
+          >
+            <span class="text-xl">📦</span>
+            <span class="leading-tight text-center">SUMAR STOCK</span>
+          </button>
+        </div>
 
         <!-- Search Bar -->
         <div class="relative">
@@ -1454,6 +1465,16 @@ ${summaryText}
                       >
                         ⚖️ Ajustar
                       </button>
+                      ${prod.isCustom ? `
+                        <button 
+                          data-delete-product="${prod.id}"
+                          data-name="${prod.name}"
+                          class="btn-delete-product px-2 py-1.5 bg-red-500/15 hover:bg-red-500/25 text-red-400 text-xs font-bold rounded-xl border border-red-500/30 touch-press"
+                          title="Eliminar producto"
+                        >
+                          🗑️
+                        </button>
+                      ` : ''}
                     </div>
                   </div>
 
@@ -1511,6 +1532,11 @@ ${summaryText}
       };
     }
 
+    const btnNewProduct = document.getElementById('btn-open-new-product-modal');
+    if (btnNewProduct) {
+      btnNewProduct.onclick = () => this.showNewProductModal();
+    }
+
     const btnIncome = document.getElementById('btn-open-income-modal');
     if (btnIncome) {
       btnIncome.onclick = () => this.showIncomeModal();
@@ -1522,6 +1548,379 @@ ${summaryText}
         this.showAdjustStockModal(prodId);
       };
     });
+
+    document.querySelectorAll('.btn-delete-product').forEach(btn => {
+      btn.onclick = () => {
+        const prodId = btn.getAttribute('data-delete-product');
+        const name = btn.getAttribute('data-name');
+        if (confirm(`¿Eliminar "${name}" del catálogo? Esta acción retirará el producto de la venta.`)) {
+          store.deleteProduct(prodId);
+          this.showToast(`Producto "${name}" eliminado`, 'warning');
+          this.render();
+        }
+      };
+    });
+  }
+
+  // --- Modal: Agregar Nueva Mercadería ---
+  showNewProductModal() {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    let imageBase64 = '';
+    let selectedIcon = '🍺';
+    const presetIcons = ['🍺', '🍻', '🍾', '🧊', '📦', '⭐', '👑', '🔥'];
+
+    const render = () => {
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-3">
+          <div class="ios-blur rounded-3xl border border-slate-700 w-full max-w-md p-5 shadow-2xl modal-enter max-h-[92vh] overflow-y-auto no-scrollbar space-y-4">
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div class="flex items-center gap-2.5">
+                <span class="text-2xl p-2 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">✨</span>
+                <div>
+                  <h3 class="font-black text-white text-base">Nueva Mercadería</h3>
+                  <p class="text-xs text-slate-400">Agregar nuevo producto al catálogo y venta</p>
+                </div>
+              </div>
+              <button id="btn-close-new-prod-modal" class="text-slate-400 hover:text-white p-2 rounded-full bg-slate-800 text-sm touch-press">
+                ✕
+              </button>
+            </div>
+
+            <!-- Form Content -->
+            <form id="form-new-product" class="space-y-3.5">
+              
+              <!-- 1. Nombre -->
+              <div>
+                <label class="text-xs font-black text-amber-400 block mb-1">NOMBRE DE LA CERVEZA / PRODUCTO: *</label>
+                <input 
+                  type="text" 
+                  id="inp-new-name" 
+                  required
+                  placeholder="Ej. Biela Reserva, Club Platino..." 
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <!-- 2. Foto / Imagen -->
+              <div class="bg-slate-950/70 p-3 rounded-2xl border border-slate-800 space-y-2">
+                <label class="text-xs font-black text-slate-300 block">FOTO O IMAGEN DEL PRODUCTO:</label>
+                <div class="flex items-center gap-3">
+                  <div id="new-prod-img-box" class="w-16 h-16 rounded-2xl bg-slate-900 border-2 border-slate-700 overflow-hidden flex items-center justify-center text-3xl shadow-inner flex-shrink-0">
+                    ${imageBase64 ? `<img src="${imageBase64}" class="w-full h-full object-cover" />` : selectedIcon}
+                  </div>
+                  <div class="flex-1 space-y-1.5">
+                    <label class="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-slate-700 touch-press">
+                      <span>📷</span> Subir Foto desde Galería / Cámara
+                      <input type="file" id="inp-new-photo-file" accept="image/*" class="hidden" />
+                    </label>
+                    <p class="text-[10px] text-slate-400">O elige un ícono si no tienes foto:</p>
+                    <div class="flex gap-1.5 flex-wrap">
+                      ${presetIcons.map(ic => `
+                        <button type="button" data-icon="${ic}" class="btn-preset-icon w-7 h-7 rounded-lg text-sm flex items-center justify-center ${selectedIcon === ic && !imageBase64 ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-slate-300'} border border-slate-800 touch-press">
+                          ${ic}
+                        </button>
+                      `).join('')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Presentación & Volumen -->
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-xs font-bold text-slate-300 block mb-1">VOLUMEN (ml):</label>
+                  <input 
+                    type="text" 
+                    id="inp-new-volume" 
+                    value="355 ml" 
+                    placeholder="355 ml, 330 ml..." 
+                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 font-bold"
+                  />
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-slate-300 block mb-1">TIPO:</label>
+                  <select id="inp-new-type" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 font-bold">
+                    <option value="Lata">Lata</option>
+                    <option value="Botella">Botella</option>
+                    <option value="Medio Litro / Jaba">Medio Litro / Jaba</option>
+                    <option value="Pack">Pack</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 4. Stock Inicial -->
+              <div>
+                <label class="text-xs font-black text-slate-300 block mb-1">CANTIDAD INICIAL (STOCK): *</label>
+                <div class="relative">
+                  <input 
+                    type="number" 
+                    id="inp-new-stock" 
+                    min="0" 
+                    value="24" 
+                    required
+                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-base font-black text-amber-400 focus:outline-none focus:border-amber-400"
+                  />
+                  <span class="absolute right-3.5 top-2.5 text-xs text-slate-500 font-bold">unidades</span>
+                </div>
+              </div>
+
+              <!-- 5. Precios: Al Público y Coste -->
+              <div class="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="text-xs font-black text-emerald-400 block mb-1">PRECIO AL PÚBLICO: *</label>
+                    <div class="relative">
+                      <span class="absolute left-3 top-2.5 text-sm text-slate-400 font-black">$</span>
+                      <input 
+                        type="number" 
+                        step="0.05" 
+                        id="inp-new-price" 
+                        placeholder="1.25" 
+                        required
+                        class="w-full bg-slate-900 border border-emerald-500/50 rounded-xl pl-7 pr-3 py-2 text-base font-black text-white focus:outline-none focus:border-emerald-400"
+                      />
+                    </div>
+                    <span class="text-[10px] text-slate-400 block mt-0.5">Venta por unidad</span>
+                  </div>
+                  <div>
+                    <label class="text-xs font-black text-amber-400 block mb-1">PRECIO DE COSTE: *</label>
+                    <div class="relative">
+                      <span class="absolute left-3 top-2.5 text-sm text-slate-400 font-black">$</span>
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        id="inp-new-cost" 
+                        placeholder="0.95" 
+                        required
+                        class="w-full bg-slate-900 border border-amber-500/50 rounded-xl pl-7 pr-3 py-2 text-base font-black text-white focus:outline-none focus:border-amber-400"
+                      />
+                    </div>
+                    <span class="text-[10px] text-slate-400 block mt-0.5">Lo que te cuesta</span>
+                  </div>
+                </div>
+
+                <div id="new-prod-profit-box" class="pt-1 text-xs font-bold text-slate-400 flex justify-between">
+                  <span>Margen por unidad:</span>
+                  <span id="new-prod-profit-val" class="font-black text-emerald-400">$0.00</span>
+                </div>
+              </div>
+
+              <!-- 6. Presentaciones Adicionales Opcionales (Sixpack y Caja) -->
+              <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <label for="toggle-pack-prices" class="flex items-center gap-2 cursor-pointer">
+                    <span class="text-base">📦</span>
+                    <span class="text-xs font-black text-white">Vender también en Sixpack y Caja</span>
+                  </label>
+                  <input type="checkbox" id="toggle-pack-prices" checked class="w-5 h-5 accent-amber-500 rounded cursor-pointer" />
+                </div>
+
+                <div id="pack-prices-container" class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80">
+                  <div>
+                    <label class="text-[11px] font-bold text-slate-300 block mb-0.5">🧊 Sixpack (6 un.):</label>
+                    <div class="relative">
+                      <span class="absolute left-2.5 top-2 text-xs text-slate-400 font-bold">$</span>
+                      <input 
+                        type="number" 
+                        step="0.25" 
+                        id="inp-new-sixpack" 
+                        placeholder="7.50" 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-6 pr-2 py-1.5 text-sm font-black text-white focus:outline-none focus:border-amber-400"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="text-[11px] font-bold text-slate-300 block mb-0.5">📦 Caja (24 un.):</label>
+                    <div class="relative">
+                      <span class="absolute left-2.5 top-2 text-xs text-slate-400 font-bold">$</span>
+                      <input 
+                        type="number" 
+                        step="0.50" 
+                        id="inp-new-caja" 
+                        placeholder="30.00" 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-6 pr-2 py-1.5 text-sm font-black text-white focus:outline-none focus:border-amber-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Submit Button -->
+              <div class="pt-2">
+                <button 
+                  type="submit" 
+                  id="btn-submit-new-product" 
+                  class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm shadow-xl flex items-center justify-center gap-2 touch-press glow-emerald"
+                >
+                  <span>💾</span> GUARDAR Y AGREGAR AL CATÁLOGO
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+
+      // Attach internal events
+      const btnClose = document.getElementById('btn-close-new-prod-modal');
+      const closeModal = () => { modalContainer.innerHTML = ''; };
+      if (btnClose) btnClose.onclick = closeModal;
+
+      // Image upload via file input with automatic thumbnail scaling
+      const inputFile = document.getElementById('inp-new-photo-file');
+      if (inputFile) {
+        inputFile.onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (re) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const maxDim = 320;
+              let w = img.width;
+              let h = img.height;
+              if (w > h) {
+                if (w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+              } else {
+                if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+              }
+              canvas.width = w;
+              canvas.height = h;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, w, h);
+              imageBase64 = canvas.toDataURL('image/jpeg', 0.82);
+
+              const previewBox = document.getElementById('new-prod-img-box');
+              if (previewBox) {
+                previewBox.innerHTML = `<img src="${imageBase64}" class="w-full h-full object-cover" />`;
+              }
+            };
+            img.src = re.target.result;
+          };
+          reader.readAsDataURL(file);
+        };
+      }
+
+      // Preset icons
+      modalContainer.querySelectorAll('.btn-preset-icon').forEach(btn => {
+        btn.onclick = () => {
+          selectedIcon = btn.getAttribute('data-icon');
+          imageBase64 = '';
+          const previewBox = document.getElementById('new-prod-img-box');
+          if (previewBox) {
+            previewBox.innerHTML = selectedIcon;
+          }
+          modalContainer.querySelectorAll('.btn-preset-icon').forEach(b => {
+            b.className = b === btn 
+              ? "btn-preset-icon w-7 h-7 rounded-lg text-sm flex items-center justify-center bg-amber-500 text-slate-950 font-bold border border-amber-300" 
+              : "btn-preset-icon w-7 h-7 rounded-lg text-sm flex items-center justify-center bg-slate-900 text-slate-300 border border-slate-800";
+          });
+        };
+      });
+
+      // Price & Cost calculation auto-update
+      const inpPrice = document.getElementById('inp-new-price');
+      const inpCost = document.getElementById('inp-new-cost');
+      const inpSixpack = document.getElementById('inp-new-sixpack');
+      const inpCaja = document.getElementById('inp-new-caja');
+      const profitVal = document.getElementById('new-prod-profit-val');
+
+      const calcProfit = () => {
+        const p = parseFloat(inpPrice?.value) || 0;
+        const c = parseFloat(inpCost?.value) || 0;
+        const diff = p - c;
+        if (profitVal) {
+          profitVal.innerText = `${diff >= 0 ? '+' : ''}${store.formatCurrency(diff)}`;
+          profitVal.className = `font-black ${diff >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+        }
+      };
+
+      if (inpPrice) {
+        inpPrice.oninput = () => {
+          calcProfit();
+          const p = parseFloat(inpPrice.value) || 0;
+          if (p > 0) {
+            if (inpSixpack && (!inpSixpack.value || inpSixpack.dataset.auto === 'true')) {
+              inpSixpack.value = (p * 6).toFixed(2);
+              inpSixpack.dataset.auto = 'true';
+            }
+            if (inpCaja && (!inpCaja.value || inpCaja.dataset.auto === 'true')) {
+              inpCaja.value = (p * 24).toFixed(2);
+              inpCaja.dataset.auto = 'true';
+            }
+          }
+        };
+      }
+      if (inpCost) inpCost.oninput = calcProfit;
+      if (inpSixpack) inpSixpack.oninput = () => { inpSixpack.dataset.auto = 'false'; };
+      if (inpCaja) inpCaja.oninput = () => { inpCaja.dataset.auto = 'false'; };
+
+      // Toggle pack prices
+      const togglePacks = document.getElementById('toggle-pack-prices');
+      const packBox = document.getElementById('pack-prices-container');
+      if (togglePacks && packBox) {
+        togglePacks.onchange = (e) => {
+          packBox.style.display = e.target.checked ? 'grid' : 'none';
+        };
+      }
+
+      // Form Submit
+      const form = document.getElementById('form-new-product');
+      if (form) {
+        form.onsubmit = (e) => {
+          e.preventDefault();
+          const name = document.getElementById('inp-new-name')?.value.trim();
+          const volume = document.getElementById('inp-new-volume')?.value.trim() || '355 ml';
+          const type = document.getElementById('inp-new-type')?.value || 'Lata';
+          const stock = parseInt(document.getElementById('inp-new-stock')?.value, 10) || 0;
+          const unitPrice = parseFloat(document.getElementById('inp-new-price')?.value) || 0;
+          const costPrice = parseFloat(document.getElementById('inp-new-cost')?.value) || 0;
+
+          if (!name) {
+            alert('Por favor escribe el nombre de la nueva mercadería.');
+            return;
+          }
+          if (unitPrice <= 0) {
+            alert('Por favor ingresa un precio de venta al público válido.');
+            return;
+          }
+          if (costPrice < 0) {
+            alert('Por favor ingresa un costo unitario válido.');
+            return;
+          }
+
+          const hasPacks = togglePacks ? togglePacks.checked : false;
+          const sixpackPrice = hasPacks ? (parseFloat(inpSixpack?.value) || null) : null;
+          const cajaPrice = hasPacks ? (parseFloat(inpCaja?.value) || null) : null;
+
+          const created = store.addNewProduct({
+            name,
+            volume,
+            type,
+            image: imageBase64,
+            icon: selectedIcon,
+            stock,
+            unitPrice,
+            costPrice,
+            sixpackPrice,
+            cajaPrice
+          });
+
+          if (created) {
+            closeModal();
+            this.showToast(`✨ ¡Mercadería "${created.name}" creada con éxito!`);
+            this.render();
+          }
+        };
+      }
+    };
+
+    render();
   }
 
   // --- Modal: Registrar Ingreso de Mercadería ---

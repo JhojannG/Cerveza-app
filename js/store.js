@@ -54,11 +54,14 @@ class Store {
           existing.volume = initP.volume;
           existing.image = initP.image;
           existing.presentations = initP.presentations;
+        } else {
+          // Add official product if missing
+          this.state.products.push(JSON.parse(JSON.stringify(initP)));
         }
       });
     }
 
-    if (!this.state.products || this.state.products.length !== INITIAL_PRODUCTS.length || !this.state.products[0].presentations) {
+    if (!this.state.products || !Array.isArray(this.state.products) || this.state.products.length === 0 || !this.state.products[0].presentations) {
       this.state.products = JSON.parse(JSON.stringify(INITIAL_PRODUCTS));
     }
     this.saveToStorage();
@@ -524,6 +527,108 @@ class Store {
 
     this.syncDocToFirestore('movements', movement);
     this.syncDocToFirestore('inventory', updatedProduct);
+
+    return true;
+  }
+
+  // --- Add New Merchandise / Product ---
+  addNewProduct(productData) {
+    const slug = (productData.name || 'cerveza').toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const id = `${slug}-${Date.now().toString(36)}`;
+
+    const initialStock = Math.max(0, parseInt(productData.stock, 10) || 0);
+    const costPrice = Math.max(0, parseFloat(productData.costPrice) || 0);
+    const unitPrice = Math.max(0, parseFloat(productData.unitPrice) || 0);
+
+    // Presentations: Unidad (obligatoria) + Sixpack y Caja (opcionales)
+    const presentations = [
+      { id: "unidad", name: "Unidad", units: 1, price: unitPrice, icon: "🍺", badge: "1 un" }
+    ];
+
+    const sixpackP = parseFloat(productData.sixpackPrice);
+    if (!isNaN(sixpackP) && sixpackP > 0) {
+      presentations.push({
+        id: "sixpack",
+        name: "Sixpack",
+        units: 6,
+        price: sixpackP,
+        icon: "🧊",
+        badge: "6 un"
+      });
+    }
+
+    const cajaP = parseFloat(productData.cajaPrice);
+    if (!isNaN(cajaP) && cajaP > 0) {
+      presentations.push({
+        id: "caja",
+        name: "Caja",
+        units: 24,
+        price: cajaP,
+        icon: "📦",
+        badge: "24 un"
+      });
+    }
+
+    const newProduct = {
+      id,
+      name: productData.name.trim(),
+      volume: productData.volume ? productData.volume.trim() : '355 ml',
+      type: productData.type ? productData.type.trim() : 'Lata',
+      image: productData.image || '',
+      icon: productData.icon || '🍺',
+      color: productData.color || '#f59e0b',
+      stock: initialStock,
+      costPrice,
+      minStockAlert: Math.max(1, parseInt(productData.minStockAlert, 10) || 6),
+      presentations,
+      isCustom: true
+    };
+
+    this.state.products.push(newProduct);
+
+    if (initialStock > 0) {
+      const movement = {
+        id: `mov_init_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        timestamp: Date.now(),
+        dateStr: this.getTodayDateString(),
+        timeStr: this.formatTime(),
+        productId: id,
+        productName: newProduct.name,
+        type: 'ingreso_inicial',
+        quantity: initialStock,
+        costTotal: initialStock * costPrice,
+        supplier: productData.supplier || 'Bodega',
+        notes: `Alta de mercadería (+${initialStock} un.)`
+      };
+      this.state.stockMovements.unshift(movement);
+      this.syncDocToFirestore('movements', movement);
+    }
+
+    this.playSaleSuccessSound();
+    this.notify();
+    this.syncDocToFirestore('inventory', newProduct);
+
+    return newProduct;
+  }
+
+  deleteProduct(productId) {
+    const idx = this.state.products.findIndex(p => p.id === productId);
+    if (idx === -1) return false;
+
+    this.state.products.splice(idx, 1);
+    this.playTapSound();
+    this.notify();
+
+    if (this.firestore && this.state.storeId) {
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
+        .then(({ doc, deleteDoc }) => {
+          const docRef = doc(this.firestore, `stores/${this.state.storeId}/inventory`, productId);
+          deleteDoc(docRef).catch(() => {});
+        }).catch(() => {});
+    }
 
     return true;
   }
