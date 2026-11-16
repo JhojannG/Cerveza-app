@@ -585,7 +585,7 @@ class AppController {
           if (priceSpan) priceSpan.className = "pres-chip-price text-sm font-black text-amber-400";
           if (unitsSpan) unitsSpan.className = "pres-chip-units text-[10px] text-slate-400";
         }
-      // Update quick set chips highlight
+      });        // Update quick set chips highlight
       modalContainer.querySelectorAll('button[data-quick-set]').forEach(btn => {
         const val = parseInt(btn.getAttribute('data-quick-set'), 10);
         if (val === quantity) {
