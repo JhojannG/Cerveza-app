@@ -500,15 +500,15 @@ class AppController {
               </button>
             </div>
 
-            <!-- Quick Quantity Chips (+1, +2, +3, +5, +6, +12, +24) -->
+            <!-- Quick Quantity Chips (1, 2, 3, 5, 6, 12, 24 - Selección directa) -->
             <div class="flex items-center justify-center gap-1.5 pt-1 flex-wrap">
               <span class="text-[10px] text-slate-400 font-bold mr-1">Rápido:</span>
               ${[1, 2, 3, 5, 6, 12, 24].map(q => `
                 <button 
-                  data-quick-add="${q}"
-                  class="btn-quick-chip py-1.5 px-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-black border border-slate-800 touch-press"
+                  data-quick-set="${q}"
+                  class="btn-quick-chip py-1.5 px-3 rounded-xl ${quantity === q ? 'bg-amber-500 text-slate-950 font-black border-2 border-amber-300 shadow-md glow-gold' : 'bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold border border-slate-800'} text-xs touch-press transition-colors"
                 >
-                  +${q}
+                  ${q}
                 </button>
               `).join('')}
             </div>
@@ -585,6 +585,14 @@ class AppController {
           if (priceSpan) priceSpan.className = "pres-chip-price text-sm font-black text-amber-400";
           if (unitsSpan) unitsSpan.className = "pres-chip-units text-[10px] text-slate-400";
         }
+      // Update quick set chips highlight
+      modalContainer.querySelectorAll('button[data-quick-set]').forEach(btn => {
+        const val = parseInt(btn.getAttribute('data-quick-set'), 10);
+        if (val === quantity) {
+          btn.className = "btn-quick-chip py-1.5 px-3 rounded-xl bg-amber-500 text-slate-950 text-xs font-black border-2 border-amber-300 shadow-md glow-gold touch-press transition-colors";
+        } else {
+          btn.className = "btn-quick-chip py-1.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-bold border border-slate-800 touch-press transition-colors";
+        }
       });
     };
 
@@ -648,11 +656,11 @@ class AppController {
       };
     }
 
-    // Quick chips
-    modalContainer.querySelectorAll('button[data-quick-add]').forEach(btn => {
+    // Quick chips: Seleccionar cantidad directa (sin sumar)
+    modalContainer.querySelectorAll('button[data-quick-set]').forEach(btn => {
       btn.onclick = () => {
-        const addVal = parseInt(btn.getAttribute('data-quick-add'), 10) || 1;
-        quantity += addVal;
+        const setVal = parseInt(btn.getAttribute('data-quick-set'), 10) || 1;
+        quantity = setVal;
         store.playTapSound();
         updateModalValues();
       };
